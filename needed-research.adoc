@@ -1,0 +1,4 @@
+- Fehlerbehandlung Flutter -> Native
+- (Anwendungsmuster vergleichen?)
+- Navigation
+- Logging
