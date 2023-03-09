@@ -1,0 +1,231 @@
+= Vergleichbares App Performance Testing unter Android und iOS mit Flutter-Modulen
+Markus Reinhold
+:sectnums:
+:toc: 
+:table-stripes: even
+
+:xref1: A Comparison of Performance and Looks Between Flutter and Native Applications, +
+https://www.diva-portal.org/smash/get/diva2:1442804/FULLTEXT01.pdf, +
+Abgerufen 2023-02-12
+
+:xref2: Key Attributes for a Quality Mobile Application, +
+https://ieeexplore.ieee.org/document/9058278/", +
+Abgerufen 2023-03-05
+
+:xref3: An Efficient and Effective New Generation Objective Quality Model for Mobile Applications, +
+https://www.researchgate.net/profile/Ali-Javed/publication/274048560_An_Efficient_and_Effective_New_Generation_Objective_Quality_Model_for_Mobile_Applications/links/56a8dc1d08aeea2a20497e7e/An-Efficient-and-Effective-New-Generation-Objective-Quality-Model-for-Mobile-Applications.pdf", +
+Abgerufen 2023-03-05
+
+:xref4: Animations in Cross-Platform Mobile Applications: An Evaluation of Tools, Metrics and Performance, +
+https://www.mdpi.com/1424-8220/19/9/2081", +
+Abgerufen 2023-02-25
+
+
+
+:cit1: Flutter 1.12.13 release notes, Add-to-App, +
+https://docs.flutter.dev/development/tools/sdk/release-notes/release-notes-1.12.13#add-to-app-feature, +
+Abgerufen 2023-03-06
+
+:cit2: Android Core App quality checklist, +
+https://developer.android.com/docs/quality-guidelines/core-app-quality, +
+Abgerufen 2023-03-06
+
+:cit3: Planning your iOS App, best practices, +
+https://developer.apple.com/ios/planning/#adopt-best-practices, +
+Abgerufen 2023-03-06
+
+:cit4: Flutter Versus Other Mobile Development Frameworks: A UI And Performance Experiment. Part 2, +
+https://web.archive.org/web/20221005043739/https://blog.codemagic.io/flutter-vs-android-ios-xamarin-reactnative/, +
+Abgerufen 2023-02-12
+
+
+== Kontext / Problemstellung
+Android iOS 
+
+=== Verschiedene App-Architekturen
+
+traditionell native android / ios apps
+doppelter Aufwand für nahezu gleiches ergebnis
+verschiedene cross platform optionen 
+(paper, welches generell mal alles angeschaut hat)
+
+normalerweise schon app vorhanden
+
+
+Eine komplette Neuentwicklung einer bestehenden App ist aber nicht nur Zeit- und kostenaufwändig, zudem müssen die existierenden Apps parallel weiterhin unterstützt werden, um die bestehenden Benutzer nicht vom Produkt zu vertreiben. Weiterhin ist es ein großes Risiko, die Funktionalität einer bestehenden App in einer neuen Architektur zu kopieren und im schlimmsten Fall ein schlechteres Ergebnis als die ursprüngliche App zu bekommen. Eine schrittweise Aktualisierung einzelner Features erscheint da sinnvoller.
+
+Mit der Version 1.12.13 des Flutter SDKs in 2019 wurde unter anderem das sogenannte Add-to-App Feature vorgestellt footnote:addtoapp[{cit1}]. Mit diesem ist es möglich, ein Flutter-Modul in eine bestehende Android- oder iOS App zu integrieren. Somit ist eine schrittweise Aktualisierung der Apps von der Ersetzung einzelner Features hin zu einer reinen Flutter-App prinzipiell technisch möglich. Es stellt sich jedoch die Frage, für welche Apps sich ein Umstieg zu Flutter lohnt und wo die Schnittstellen zwischen Flutter- und nativem Quellcode am sinnvollsten sind.
+
+=== Softwarequalität für mobile Applikationen
+
+wie kann man die Qualität messen?
+Um zu entscheiden, ob sich generell der Einsatz eines anderen Frameworks wie bspw. Flutter im Vergleich zur nativen Implementierung lohnt, stellt sich zunächst das Hindernis, wie die App-Qualität untersucht werden kann. Dazu werden die offiziellen Richtlinien von Android und iOS in den Kontext von zwei weiteren Qualitätsmodellen für mobile Applikationen gesetzt.
+
+.Teilgebiete der Softwarequalität für mobile Applikationen
+[grid=rows]
+,===
+,Android Guidelines footnote:andQua[{cit2}],iOS Best Practices footnote:iosQua[{cit3}],Key Attributes for a Quality Mobile Application footnote:attrQA[{xref2}],An Efficient and Effective New Generation Objective Quality Model for Mobile Applications footnote:OqmMA[{xref3}]
+
+(1) App benutzt Systemressourcen in sinnvollem Maße,"Performance & Stability + 
+Functionality",Optimize Performance,Productivity,"Efficiency (battery power, memory)" 
+
+"(2) Benutzung nativer UIs, Bedienkonzepte, Services",Functionality,"Assemble your UI from standard views + 
+Human Interface Guidelines","Convenience + 
+Ease of Use","Adaptability + 
+Usability"
+
+"(3) Daten werden vor unauthorisiertem Zugriff geschützt",Security,Secure Data,Security,Security
+
+(4) Für eine Aufgabe werden die sinnvollsten und simpelsten Methoden verwendet,Functionality,Human Interface Guidelines,"Ease of Use + 
+Productivity","Suitability + 
+Usability"
+
+"(5) App lässt sich über App Stores aktualisieren, hält dessen Standards ein",Google Play,App Store Guidelines,"Adaptability + 
+Convenience","Extensibility + 
+Maintainability"
+
+"(6) Daten überleben Pause, Neustart, Rotation der App",Visual Experience,-,Information Perisitence,Data Integrity
+
+"(7) Unterstützt mehrere Gerätemodelle, auch in Zukunft",-,"Build for multiple platforms + 
+Automatic Layout",Flexibility,"Portability + 
+Maintainability"
+
+"(8) Anpassung an verschiedene Regionen, Kulturen, Einschränkungen",Visual Experience,"Accessibility + 
+Inclusion
+Internationalize",-,-
+
+(9) Privatsphäre der Nutzerdaten,Privacy,Protect Privacy,-,-
+
+(10) Debugging und Testen für robusten Code,(Checkliste abarbeiten),Test,-,-
+
+(11) App erfüllt die Anforderungen der User,-,-,-,Functionality
+
+(12) Nutzen von verschiedenen Geschäftsmodellen,-,Choose Business model,-,-
+,===
+
+Es konnten 12 verschiedene Teilgebiete der Qualität ermittelt werden, von denen die ersten 5 in allen vier Quellen eine Relevanz haben, unter anderem die Performance der App. Zweifelsohne kann die Qualität einer App nicht nur von der Performance abgeleitet werden, aber eine sinnvolle Nutzung der Ressourcen von Mobilgeräten ist integral für das Qualitätsgefühl der App beim späteren Kunde:
+
+* eine geringe CPU-Auslastung führt zu weniger Abwärme beim Benutzen der App und eine bessere Akkulaufzeit
+* durch weniger Speicherverbrauch können mehr Apps parallel geöffnet und benutzt werden und einzelne Apps laden schneller, wenn sie gestartet werden
+
+Aus diesem Grund soll sich vorrangig mit dem Vergleich der Performance zwischen Flutter und nativen Apps auseinandergesetzt werden. Es existieren bereits einige Vergleiche zwischen der Performance von nativen Apps und Cross-Plattform-Apps mit verschiedenen Technologien, welche im folgenden nach den benutzten Tools und den erzielten Ergebnissen untersucht werden. 
+
+_A Comparison of Performance and Looks Between Flutter and Native Applications_ footnote:flutterPerf[{xref1}] vergleichen Android, iOS und Flutter in Bezug auf die App Performance, Die Komplexität des Quellcodes und das Look&Feel der resultierenden Apps. Dazu wurde ein App-Konzept jeweils nativ in Kotlin (Android), Swift (iOS) und Flutter implementiert und die resultierenden Apps auf den jeweiligen Plattformen miteinander verglichen. Die CPU-Auslastung wurde manuell auf beiden Plattformen gemessen und dann die jeweilige Flutter-App mit der nativen App verglichen. Es konnte kein nennenswerter Unterschied in der Performance festgestellt werden. Die Qualität des UIs in den beiden Android-Apps wurde aus einer Umfrage ermittelt, die iOS Apps wurden nicht verglichen. Die Automatisierung von Performance- und UI-Tests wurde für die potentielle Verbesserung der Messergebnisse vorgeschlagen.
+
+In _Flutter Versus Other Mobile Development Frameworks: A UI And Performance Experiment. Part 2_ footnote:crossPerf[{cit4}]  wurde ebenfalls die CPU-Auslastung zwischen Flutter, Android, iOS, Xamarin und React Native verglichen. Zudem wurden auch funktional gleiche Apps komplett in den verschiedenen Plattformen implementiert. Flutter schnitt bei den manuellen Tests in Android besser als die native Implementation ab.
+
+_Animations in Cross-Platform Mobile Applications: An Evaluation of Tools, Metrics and Performance_ footnote:crossAnim[{xref4}] testet Animationen in den Plattformen Android und iOS jeweils nativ und mit den Frameworks Xamarin, React Native und Ionic getestet. Flutter war kein Teil der Tests, aber die manuellen Testdurchläufe wurden detailliert beschrieben und können als Grundlage für eigene Tests verwendet werden.
+
+Tabelle 2 listet die benutzten Tools der verschiedenen verwandten Arbeiten. Der Profiler von Android Studio und die Instruments-Umgebung von XCode sind in allen drei Versuchen verwendet worden. Nennenswert ist hierbei auch, dass alle Tests mit dedizierten Flutter-Apps durchgeführt wurden und die Einbindung von Flutter-Modulen in bestehende Apps keine Beachtung gefunden hat. Zudem erfolgte die Testausführung immer manuell und mit vergleichweise geringen Wiederholungen, um robustere Ergebnisse zu erhalten.
+
+.verwendete Tools zum Profiling auf den Plattformen Android und iOS
+,===
+,footnote:flutterPerf[{xref1}] (2020),footnote:crossPerf[{cit4}] (2019),footnote:crossAnim[{xref4}] (2019)
+
+Android CPU Usage,Android Studio Profiler,Android Studio Profiler,Android Studio Profiler
+Android Memory Usage,-,-,Android Studio Profiler
+Android FPS,-,-,adb systrace
+Android GPU Memory,-,-,adb dumpsys
+iOS CPU Usage,Instruments,-,Instruments: Core Animation
+iOS Memory Usage,-,-,Instruments: VM Tracker
+iOS FPS,-,-,Instruments: Time Profiler
+iOS GPU Memory,-,-,-
+,===
+
+=== Ziel
+
+
+
+RQ1:: Welche Tools und Methoden existieren zum Performance Profiling auf den Plattformen Android und iOS und für Flutter-Module?
+RQ2:: Welche Performance-Metriken können auf beiden Plattformen und im Kontext von Flutter-Modulen erfasst werden?
+RQ3:: Wie können die Daten aufbereitet und in ein einheitliches Format zur Weiterverarbeitung überführt werden?
+
+== Grundlagen
+=== Performance Profiling
+
+bestimmte profile versionen erstellt
+- nahezu identisch mit release version
+- flutter wird kompiliert und nicht im JIT Modus ausgeführt
+
+==== Profiler und deren Metriken
+==== macro / microbenchmarks
+=== Instrumented Tests, UI Tests
+=== Einbindung von Flutter-Modulen
+== Testumgebung
+Die Nutzbarkeit der gefundenen Methoden zum Performance Profiling 
+zwei apps erstellt
+flutter modul
+eingebunden
+Mockoon für folgenden Datensatz: 
+
+
+Das Testszenario besteht aus einem API-Aufruf zu einem Rest-Server und der Umwandlung von den resultierenden JSON-Daten zu einem eigenen Datenmodell. 
+Ein lokaler REST-Server bietet zudem eine geringere Latenz durch Netzwerkaufrufe verglichen mit einem externen Server.
+
+.Verbindungen zwischen Native, Flutter und REST
+image::res/program-setup-diagram.png[]
+
+.Beispieldaten des lokalen REST-Servers
+[source,json]
+----
+[
+  {
+    "title": "26304"
+  },
+  {
+    "title": "86258"
+  },
+  {
+    "title": "91582"
+  },
+  // [...]
+]
+----
+
+=== Implementierung
+==== Flutter Modul
+kommunikaton zwischen Flutter und native
+
+==== Android App
+==== iOS App
+learnings bei ios
+
+=== Ergebnisse
+=== Ausblick
+nicht nur Performance wichtig, sondern auch andere wichtige Metriken 
+
+wie kann softwarequalität sinnvoll und objetiv gemessen werden?
+ISO 9126
+
+Änderbarkeit / Wartbarkeit:: 
+Benutzbarkeit:: 
+Änderbarkeit:: Testbarkeit
+Effizienz:: Verbrauchsverhalten
+Übertragbarkeit::
+Zuverlässigkeit::
+Funktionalität::
+
+
+
+
+[IMPORTANT] 
+.Feeding the Werewolves
+==== 
+While werewolves are hardy community members, keep in mind the following dietary concerns:
+
+. They are allergic to cinnamon.
+. More than two glasses of orange juice in 24 hours makes them howl in harmony with alarms and sirens.
+. Celery makes them sad.
+====
+
+[sidebar]
+Sidebars are used to visually separate auxiliary bits of content
+that supplement the main text.
+
+
+sdf
+
+
+
+
+
