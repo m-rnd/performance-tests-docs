@@ -186,7 +186,7 @@ MethodChannel:: Methodenname und Parameter werden gesendet und Rückgabewerte k�
 EventChannel:: Ein Stream von Events kann abonniert werden
 BasicMessageChannel:: Daten in eigenem Format (bspw. JSON) können gesendet und Rückgabewerte empfangen werden
 
-Alle Channels können sowohl in Richtung Flutter > Host als auch Host > Flutter implementiert werden. Obwohl das Konzept von Datentypen in Channels beachtet wird, sind diese nicht typsicher (weder in Parameterreihenfolge noch Nullability). Um diese Funktionalität zu erhalten, kann das Flutter-Plugin _Pigeon_ footnote:pigeon[https://pub.dev/packages/pigeon, abgerufen 2023-03-04] verwendet werden, welches offiziell von Flutter unterstützt wird. Mit Hilfe des Plugins können Schnittstellen zwischen Flutter und Hostplattformen durch code generation erstellt werden. Der generierte Quellcode muss schließlich nur noch in die Projekte der jeweiligen Plattformen eingebunden werden.
+Alle Channels können sowohl in Richtung Flutter > Host als auch Host > Flutter implementiert werden. Obwohl das Konzept von Datentypen in Channels beachtet wird, sind diese nicht typsicher (weder in Parameterreihenfolge noch Nullability). Um diese Funktionalität zu erhalten, kann das Flutter-Plugin _Pigeon_ footnote:pigeon[https://pub.dev/packages/pigeon, abgerufen 2023-03-04] verwendet werden, welches offiziell von Flutter unterstützt wird. Mithilfe des Plugins können Schnittstellen zwischen Flutter und Hostplattformen durch code generation erstellt werden. Der generierte Quellcode muss schließlich nur noch in die Projekte der jeweiligen Plattformen eingebunden werden.
 
 Wichtig beim Aufrufen der Kommunikationsschnittstelle egal welcher Art ist, dass dies nur im UI Thread (Android) bzw. Main Thread (iOS) geschehen darf. Intern werden diese Aufrufe schließlich asynchron behandelt. 
 
@@ -224,20 +224,179 @@ image::res/program-setup-diagram.png[]
 ----
 
 === Implementierung
+
+Macbook Pro 2021 M1 Pro mit macOS 12.6
 ==== Flutter Modul
 kommunikaton zwischen Flutter und native
 
 ==== Android App
 
+Android Studio Version 2022.3.1 Canary 5, Es wurde sich bewusst für eine Canary Version der IDE entschieden, da einige Profiling Tools in der derzeit aktuellen Stable-Version 2021.3 nicht erwartungsgemäß funktionierten.
+
+Der Autor hat Vorerfahrung in der Android-Entwicklung, weswegen für die Strukturierung des Quellcodes extra Zeit genommen wurde. Genutzt wird die sogenannte Module-By-Layer Struktur, welche auf dem Clean-Architecture Prinzip aufbaut. 
+Hintergrund ist das Testen der Performance in realeren Bedingungen und die Einbindung von Flutter-Modulen in besthehende Applikationen
+
 android app mit module by layer struktur
+hilt dependency injection
 extra modul für flutter data source
 profile extra
 
-Android Studio erstellt App Versionen für das Performance Profiling nicht automatsich footnote:[https://developer.android.com/studio/profile, abgerufen 2023-03-22]
+Android Studio erstellt App Versionen für das Performance Profiling nicht automatisch, sondern es muss ein eigener Profile Build type erstellt werden footnote:[https://developer.android.com/studio/profile, abgerufen 2023-03-22]
 
+ausprobieren von macrobenchmark und microbenchmark
 
 
 ==== iOS App
+
+autor hat nicht so viel Erfahrung in iOS Programmierung
+
+
+durch vorherige schwierigkeiten mit di wurde die hier nicht verwendet
+
+
+XCode 14.2
+begonnen mit neuem xcode Projekt, Swift 5, 
+
+
+Das bestehende Flutter-Modul wurde mit der offiziellen Anleitung in das XCode-Projekt eingebunden footnote:[https://docs.flutter.dev/development/add-to-app/ios/project-setup, abgerufen 2023-03-22]. Dabei wurde der Weg über die Einbindung mit cocoapods, einem Dependency Mananger für Swift footnote:[https://cocoapods.org/, abgerufen 2023-03-22], gewählt.
+
+Das Flutter-Modul wird 
+
+
+Zunächst wurde identisch zur Android-Implementation eine Klasse zur Repräsentation eines einzelnen Artikels der API erstellt.
+
+.App Entity für die Repräsentation eines News-Eintrages
+[source, Swift]
+----
+struct NewsEntry {
+    let title: String
+}
+----
+
+Basierend auf dem automatisch generierten ContentView des SwiftUi-Projektes wurde ein Button zum Start des Downloads und ein Statustext hinzugefügt. 
+
+.UI der Applikation mit Button zum Start des Downloads und Textlabel, welches den Download-Status anzeigt
+[source, Swift]
+----
+struct ContentView: View {
+    @State private var isLoading = false
+    
+    var body: some View {
+        VStack {
+            Button("Download") {
+                callApi()
+            }
+            if (isLoading) {
+                Text("loading...")
+            } else {
+                Text("finished")
+            }
+        }
+    }
+    
+    func callApi() {
+        isLoading = true
+        NewsRepository().callApi(flutter: true) { data in
+            isLoading = false
+        }
+    }
+}
+----
+
+Eine weitere Klasse ist die NewsRepository, die ähnlich zur Android-App entscheidet, ob die Artikel von der Flutter-API oder der nativen API bereitgestellt werden. Desweiteren wird eine Callback-Funktion mitgeliefert um die Daten später im UI anzeigen zu können.
+
+.Repository als Entscheidungspunkt für Aufrufe in Flutter oder Swift
+[source,Swift]
+----
+struct NewsRepository {
+    func callApi(flutter: Bool, resultHandler: @escaping ([NewsEntry]) -> Void) {
+        if (flutter) {
+            FlutterDependencies().callApi(resultHandler: resultHandler)
+        } else {
+            AlamofireClient().callApi(resultHandler: resultHandler)
+        }
+    }
+}
+----
+
+Die native Implementation ist über das Alamofire-Paket realisiert. Zuerst wird die API-Response von JSON in ein `ApiNewsEntry`-Objekt deserialisiert, welches einen optionalen Titel beseitzt. Im anschließenden Mapping werden Artikel in die zuvor erläuterte `NewsEntry`-Klasse umgewandelt und Artikel mit fehlendem Titel dabei übersprungen. Zuletzt wird je nach Ausgang des Requests entweder die Liste von `NewsEntry`s oder eine leere Liste zurückgegeben. 
+
+.native Implementation des REST-Clients über Alamofire
+[source, Swift]
+----
+struct ApiNewsEntry: Decodable {
+    let title: String?
+}
+
+struct AlamofireClient {
+    
+    var signposter = Signposter()
+    
+    func callApi(resultHandler: @escaping ([NewsEntry]) -> Void) {
+        signposter.beginInterval("AlamofireClient.callApi")
+        AF.request("http://192.168.178.39:3001/news", encoding: JSONEncoding.default).responseDecodable(of: [ApiNewsEntry].self) { response in
+            signposter.endInterval("AlamofireClient.callApi")
+            
+            signposter.beginInterval("AlamofireClient.mapEntities")
+            let res = response.value?.compactMap { entity in
+                // Mapping der Entities, wenn ein Titel vorhanden ist
+                if let title = entity.title {
+                    return NewsEntry(title: title)
+                }
+                return nil
+            }
+            signposter.endInterval("AlamofireClient.mapEntities")
+            resultHandler(res ?? [])
+        }
+    }
+}
+----
+
+flutter engine erstellt und registriert
+in echtem projekt sollte engine wiederverwendet werden
+flutter api (pigeon) erstellt
+getNEws aufgerufen 
+mapping zu internen Datentypen
+
+
+.Flutter Dependencies mit Signpost-Messungen
+[source,Swift]
+----
+class FlutterDependencies: ObservableObject {
+    let signposter: Signposter = Signposter()
+    lazy var flutterEngine = FlutterEngine(name: "my flutter engine")
+    
+    init(){
+        signposter.beginInterval("flutter init")
+        flutterEngine.run()
+        signposter.endInterval("flutter init")
+        
+        signposter.beginInterval("register")
+        GeneratedPluginRegistrant.register(with: self.flutterEngine);
+        signposter.endInterval("register")
+    }
+    
+    func callApi(resultHandler: @escaping ([NewsEntry]) -> Void) {
+        let api = FlutterNewsApi(binaryMessenger: flutterEngine.binaryMessenger)
+        
+        signposter.beginInterval("FlutterDependencies.callApi")
+        api.getNews(completion: {(data) in
+            self.signposter.endInterval("FlutterDependencies.callApi")
+            
+            self.signposter.beginInterval("FlutterDependencies.mapEntities")
+            let res = data.compactMap { entity in
+                if let title = entity.title {
+                    return NewsEntry(title: title)
+                }
+                return nil
+            }
+            self.signposter.endInterval("FlutterDependencies.mapEntities")
+            
+            resultHandler(res)
+        })
+    }
+}
+----
 
 === Ergebnisse
 
