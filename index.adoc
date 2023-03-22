@@ -12,9 +12,7 @@ Abgerufen 2023-02-12
 https://ieeexplore.ieee.org/document/9058278/", +
 Abgerufen 2023-03-05
 
-:xref3: An Efficient and Effective New Generation Objective Quality Model for Mobile Applications, +
-https://www.researchgate.net/profile/Ali-Javed/publication/274048560_An_Efficient_and_Effective_New_Generation_Objective_Quality_Model_for_Mobile_Applications/links/56a8dc1d08aeea2a20497e7e/An-Efficient-and-Effective-New-Generation-Objective-Quality-Model-for-Mobile-Applications.pdf", +
-Abgerufen 2023-03-05
+:xref3: Zahra, S., Khalid, A., & Javed, A. (2013). An efficient and effective new generation objective quality model for mobile applications. International Journal of Modern Education and Computer Science, 5(4), 36.
 
 :xref4: Animations in Cross-Platform Mobile Applications: An Evaluation of Tools, Metrics and Performance, +
 https://www.mdpi.com/1424-8220/19/9/2081", +
@@ -39,11 +37,14 @@ https://web.archive.org/web/20221005043739/https://blog.codemagic.io/flutter-vs-
 Abgerufen 2023-02-12
 
 
-== Kontext / Problemstellung
+== Motivation
 Android iOS 
 
 === Verschiedene App-Architekturen
 
+Traditionell werden Applikationen für die Betriebssysteme Android und iOS "nativ", das heißt mit den von den Herstellern bereitgestellten Programmiersprachen und Entwicklungsumgebungen, entwickelt. Diese Art der Implementierung wird generell als qualitativ hochwertig angesehen, da die betriebssystemspezifischen Eigenheiten (bspw. Navigationskonzept oder Umgang mit Systemfunktionen) von den Entwicklern nach den Richtlinien der jeweiligen Betriebssystemhersteller umgesetzt werden. Somit fühlt sich eine App "wie für das Betriebssystem gemacht" an. In den meisten Fällen werden Apps nicht nur für ein Betriebssystem konzipiert, sondern müssen sowohl auf Android- als auch iOS-Geräten lauffähig sein. Dies bedeutet im nativen Kontext den doppelten Entwicklungsaufwand bei praktisch gleichem Endergebnis. Gerade bei kleinen Projekten für einen übersichtlichen Markt ist der Gedanke naheliegend, die gleiche Codebasis für beide Betriebssysteme zu verwenden und einen Kompromiss zwischen Individuallösungen und Kosten / Entwicklungszeit einzugehen. Dieser Ansatz wird als "Cross-Platform" bezeichnet und nutzt meist von den Betriebssystemherstellern unabhängige Sprachen und Programmierumgebungen.
+ 
+ 
 traditionell native android / ios apps
 doppelter Aufwand für nahezu gleiches ergebnis
 verschiedene cross platform optionen 
@@ -52,7 +53,7 @@ verschiedene cross platform optionen
 normalerweise schon app vorhanden
 
 
-Eine komplette Neuentwicklung einer bestehenden App ist aber nicht nur Zeit- und kostenaufwändig, zudem müssen die existierenden Apps parallel weiterhin unterstützt werden, um die bestehenden Benutzer nicht vom Produkt zu vertreiben. Weiterhin ist es ein großes Risiko, die Funktionalität einer bestehenden App in einer neuen Architektur zu kopieren und im schlimmsten Fall ein schlechteres Ergebnis als die ursprüngliche App zu bekommen. Eine schrittweise Aktualisierung einzelner Features erscheint da sinnvoller.
+Eine komplette Neuentwicklung einer bestehenden App ist aber nicht nur Zeit- und kostenaufwändig, vielmehr müssen die existierenden Apps parallel weiterhin unterstützt werden, um eine gleichbleibende Qualität für die Benutzer zu bieten. Weiterhin ist es ein großes Risiko, die Funktionalität einer bestehenden App in eine neuen Architektur zu portieren und schlimmstenfalls eine schlechtere Qualität als die der ursprünglichen App zu bekommen. Eine schrittweise Aktualisierung einzelner Features erscheint da sinnvoller.
 
 Mit der Version 1.12.13 des Flutter SDKs in 2019 wurde unter anderem das sogenannte Add-to-App Feature vorgestellt footnote:addtoapp[{cit1}]. Mit diesem ist es möglich, ein Flutter-Modul in eine bestehende Android- oder iOS App zu integrieren. Somit ist eine schrittweise Aktualisierung der Apps von der Ersetzung einzelner Features hin zu einer reinen Flutter-App prinzipiell technisch möglich. Es stellt sich jedoch die Frage, für welche Apps sich ein Umstieg zu Flutter lohnt und wo die Schnittstellen zwischen Flutter- und nativem Quellcode am sinnvollsten sind.
 
@@ -108,6 +109,8 @@ Es konnten 12 verschiedene Teilgebiete der Qualität ermittelt werden, von denen
 * eine geringe CPU-Auslastung führt zu weniger Abwärme beim Benutzen der App und eine bessere Akkulaufzeit
 * durch weniger Speicherverbrauch können mehr Apps parallel geöffnet und benutzt werden und einzelne Apps laden schneller, wenn sie gestartet werden
 
+=== Performance Profiling in Cross-Platform-Szenarien
+
 Aus diesem Grund soll sich vorrangig mit dem Vergleich der Performance zwischen Flutter und nativen Apps auseinandergesetzt werden. Es existieren bereits einige Vergleiche zwischen der Performance von nativen Apps und Cross-Plattform-Apps mit verschiedenen Technologien, welche im folgenden nach den benutzten Tools und den erzielten Ergebnissen untersucht werden. 
 
 _A Comparison of Performance and Looks Between Flutter and Native Applications_ footnote:flutterPerf[{xref1}] vergleichen Android, iOS und Flutter in Bezug auf die App Performance, Die Komplexität des Quellcodes und das Look&Feel der resultierenden Apps. Dazu wurde ein App-Konzept jeweils nativ in Kotlin (Android), Swift (iOS) und Flutter implementiert und die resultierenden Apps auf den jeweiligen Plattformen miteinander verglichen. Die CPU-Auslastung wurde manuell auf beiden Plattformen gemessen und dann die jeweilige Flutter-App mit der nativen App verglichen. Es konnte kein nennenswerter Unterschied in der Performance festgestellt werden. Die Qualität des UIs in den beiden Android-Apps wurde aus einer Umfrage ermittelt, die iOS Apps wurden nicht verglichen. Die Automatisierung von Performance- und UI-Tests wurde für die potentielle Verbesserung der Messergebnisse vorgeschlagen.
@@ -150,8 +153,46 @@ bestimmte profile versionen erstellt
 ==== Profiler und deren Metriken
 ==== macro / microbenchmarks
 === Instrumented Tests, UI Tests
+
+Ein in Android und iOS oft benutzter Weg, um die späteren Untersuchungen systematisch und wiederholbar auf verschiedenen Testgeräten durchzuführen, sind sogenannte _Instumented Tests_. Diese werden dem Projekt in gesonderten Ordner- oder Paketstrukturen hinterlegt und von Android Studio und XCode unterstützt.
+- damit kann Flutter Engine 
+
+Fluter bietet über die integrierten _Dev Tools_ ebenfalls Möglichkeiten, verschiedene Performance-Metriken darzustellen und auszuwerten. footnote:fluttDevTools[https://docs.flutter.dev/perf/ui-performance, abgerufen 2023-03-01], Integration Tests für Performance Profiling sind ebenfalls möglich 
+
 === Einbindung von Flutter-Modulen
-== Testumgebung
+
+==== Integration in eine Android-App
+gradle script
+
+- komplett ohne UI
+- als Activity
+- als Fragment
+- custom View
+
+die ausführliche Anleitung
+
+Die Einbindung von Android UI-Elementen innerhalb eines Flutter UIs ist ebenfalls möglich footnote:androidView[https://docs.flutter.dev/development/platform-integration/android/platform-views, abgerufen 2023-03-04].
+
+==== Integration in eine iOS-App
+cocapod
+
+Die Einbindung von iOS UI-Elementen innerhalb eines Flutter UIs ist ebenfalls möglich footnote:iOSview[https://docs.flutter.dev/development/platform-integration/ios/platform-views, abgerufen 2023-03-04].
+
+==== Kommunikation zum Flutter-Modul
+
+Das Flutter Framework stellt sogenannte _Platform Channels_ footnote:PlatChan[https://docs.flutter.dev/development/platform-integration/platform-channels, abgerufen 2023-03-04] zur Kommunikation zwischen der Flutter Engine und dem jeweiligen Host her. Die Nachrichten werden binär serialisiert und primitive Datentypen sind standardmäßig unterstützt. Dem Entwickler stehen folgende Arten von Channels zur Verfügung:
+
+MethodChannel:: Methodenname und Parameter werden gesendet und Rückgabewerte können empfangen werden (Methode muss zuvor implementiert werden)
+EventChannel:: Ein Stream von Events kann abonniert werden
+BasicMessageChannel:: Daten in eigenem Format (bspw. JSON) können gesendet und Rückgabewerte empfangen werden
+
+Alle Channels können sowohl in Richtung Flutter > Host als auch Host > Flutter implementiert werden. Obwohl das Konzept von Datentypen in Channels beachtet wird, sind diese nicht typsicher (weder in Parameterreihenfolge noch Nullability). Um diese Funktionalität zu erhalten, kann das Flutter-Plugin _Pigeon_ footnote:pigeon[https://pub.dev/packages/pigeon, abgerufen 2023-03-04] verwendet werden, welches offiziell von Flutter unterstützt wird. Mit Hilfe des Plugins können Schnittstellen zwischen Flutter und Hostplattformen durch code generation erstellt werden. Der generierte Quellcode muss schließlich nur noch in die Projekte der jeweiligen Plattformen eingebunden werden.
+
+Wichtig beim Aufrufen der Kommunikationsschnittstelle egal welcher Art ist, dass dies nur im UI Thread (Android) bzw. Main Thread (iOS) geschehen darf. Intern werden diese Aufrufe schließlich asynchron behandelt. 
+
+Eine weitere Möglichkeit bietet das _ffi_-Plugin footnote:ffi[https://dart.dev/guides/libraries/c-interop, abgerufen 2023-03-04], welches den Aufruf von Funktionen aus C-Bibliotheken auf dem Host ermöglicht. Der Aufruf von Dart-Methoden aus Richtung des Hosts ist damit jedoch nicht möglich, weswegen das Plugin nicht für die geplanten Einsatzgebiete für Flutter-Module relevant ist. 
+
+== Versuchsaufbau
 Die Nutzbarkeit der gefundenen Methoden zum Performance Profiling 
 zwei apps erstellt
 flutter modul
@@ -187,45 +228,63 @@ image::res/program-setup-diagram.png[]
 kommunikaton zwischen Flutter und native
 
 ==== Android App
+
+android app mit module by layer struktur
+extra modul für flutter data source
+profile extra
+
+Android Studio erstellt App Versionen für das Performance Profiling nicht automatsich footnote:[https://developer.android.com/studio/profile, abgerufen 2023-03-22]
+
+
+
 ==== iOS App
-learnings bei ios
 
 === Ergebnisse
-=== Ausblick
+
+
+android: 
+
+macrobenchmarks geben nur systrace zurück, keinen method trace
+androidx tracing lib kann helfen, aber nur native
+
+profile build type muss profile heißen!
+
+microbenchmark gibt systrace und callstack sample zurück
+
+
+iOS:
+learnings bei ios
+signpost api geht mit plugin
+call stack auch im release build zu sehen
+
+performance profiler würde mehrere signpost aufrufe korrekt filtern und auch averages anzeigen
+xctmetrics sind ein guter anfang, aber sign posts müssten angepasst werden
+
+alamofire plugin genutzt
+
+
+
+
+image::res/api-call-ios-flutter.png[]
+image::res/api-call-ios-native.png[]
+
+== Ausblick
 nicht nur Performance wichtig, sondern auch andere wichtige Metriken 
 
 wie kann softwarequalität sinnvoll und objetiv gemessen werden?
 ISO 9126
 
-Änderbarkeit / Wartbarkeit:: 
-Benutzbarkeit:: 
-Änderbarkeit:: Testbarkeit
-Effizienz:: Verbrauchsverhalten
-Übertragbarkeit::
-Zuverlässigkeit::
-Funktionalität::
+---
+
+Fragen: 
+
+- Aufbau Projekt (SW Qualität mit rein?)
+- Zeitplan
+- ASCIIDoc:
+* Listings usw richtig verlinken?
+* Quellenangabe in wissenschaftlicher Form
 
 
+matlab, spss,  k means cluster
 
-
-[IMPORTANT] 
-.Feeding the Werewolves
-==== 
-While werewolves are hardy community members, keep in mind the following dietary concerns:
-
-. They are allergic to cinnamon.
-. More than two glasses of orange juice in 24 hours makes them howl in harmony with alarms and sirens.
-. Celery makes them sad.
-====
-
-[sidebar]
-Sidebars are used to visually separate auxiliary bits of content
-that supplement the main text.
-
-
-sdf
-
-
-
-
-
+kapitel schon einleitung abschlussatz
