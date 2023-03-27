@@ -3,6 +3,8 @@ Markus Reinhold
 :sectnums:
 :toc: 
 :table-stripes: even
+:figure-caption!:
+:table-caption!:
 
 :xref1: A Comparison of Performance and Looks Between Flutter and Native Applications, +
 https://www.diva-portal.org/smash/get/diva2:1442804/FULLTEXT01.pdf, +
@@ -17,6 +19,8 @@ Abgerufen 2023-03-05
 :xref4: Animations in Cross-Platform Mobile Applications: An Evaluation of Tools, Metrics and Performance, +
 https://www.mdpi.com/1424-8220/19/9/2081", +
 Abgerufen 2023-02-25
+
+:xref5: Martin, R. C. (2017). Clean architecture.
 
 
 
@@ -35,6 +39,14 @@ Abgerufen 2023-03-06
 :cit4: Flutter Versus Other Mobile Development Frameworks: A UI And Performance Experiment. Part 2, +
 https://web.archive.org/web/20221005043739/https://blog.codemagic.io/flutter-vs-android-ios-xamarin-reactnative/, +
 Abgerufen 2023-02-12
+
+
+:imgAndArch: Abbildung 1
+:tabAndArch: Tabelle 1
+
+== Glossar
+
+Gradle:: Build Tool für u.a. Android-Projekte
 
 
 == Motivation
@@ -154,7 +166,7 @@ bestimmte profile versionen erstellt
 ==== macro / microbenchmarks
 === Instrumented Tests, UI Tests
 
-Ein in Android und iOS oft benutzter Weg, um die späteren Untersuchungen systematisch und wiederholbar auf verschiedenen Testgeräten durchzuführen, sind sogenannte _Instumented Tests_. Diese werden dem Projekt in gesonderten Ordner- oder Paketstrukturen hinterlegt und von Android Studio und XCode unterstützt.
+Ein in Android und iOS oft benutzter Weg, um die späteren Untersuchungen systematisch und wiederholbar auf verschiedenen Testgeräten durchzuführen, sind sogenannte _Instrumented Tests_. Diese werden dem Projekt in gesonderten Ordner- oder Paketstrukturen hinterlegt und von Android Studio und XCode unterstützt.
 - damit kann Flutter Engine 
 
 Fluter bietet über die integrierten _Dev Tools_ ebenfalls Möglichkeiten, verschiedene Performance-Metriken darzustellen und auszuwerten. footnote:fluttDevTools[https://docs.flutter.dev/perf/ui-performance, abgerufen 2023-03-01], Integration Tests für Performance Profiling sind ebenfalls möglich 
@@ -199,6 +211,7 @@ flutter modul
 eingebunden
 Mockoon für folgenden Datensatz: 
 
+=== REST-Server
 
 Das Testszenario besteht aus einem API-Aufruf zu einem Rest-Server und der Umwandlung von den resultierenden JSON-Daten zu einem eigenen Datenmodell. 
 Ein lokaler REST-Server bietet zudem eine geringere Latenz durch Netzwerkaufrufe verglichen mit einem externen Server.
@@ -223,30 +236,129 @@ image::res/program-setup-diagram.png[]
 ]
 ----
 
-=== Implementierung
+
 
 Macbook Pro 2021 M1 Pro mit macOS 12.6
-==== Flutter Modul
+=== Flutter Modul
 kommunikaton zwischen Flutter und native
 
-==== Android App
+=== Android App
 
-Android Studio Version 2022.3.1 Canary 5, Es wurde sich bewusst für eine Canary Version der IDE entschieden, da einige Profiling Tools in der derzeit aktuellen Stable-Version 2021.3 nicht erwartungsgemäß funktionierten.
-
-Der Autor hat Vorerfahrung in der Android-Entwicklung, weswegen für die Strukturierung des Quellcodes extra Zeit genommen wurde. Genutzt wird die sogenannte Module-By-Layer Struktur, welche auf dem Clean-Architecture Prinzip aufbaut. 
-Hintergrund ist das Testen der Performance in realeren Bedingungen und die Einbindung von Flutter-Modulen in besthehende Applikationen
-
-android app mit module by layer struktur
-hilt dependency injection
-extra modul für flutter data source
-profile extra
-
-Android Studio erstellt App Versionen für das Performance Profiling nicht automatisch, sondern es muss ein eigener Profile Build type erstellt werden footnote:[https://developer.android.com/studio/profile, abgerufen 2023-03-22]
-
-ausprobieren von macrobenchmark und microbenchmark
+Für die Erstellung der Android App wurde das Programm 
+_Android Studio _ in der Version _2022.3.1 Canary 5_ verwendet, welches die offizielle Entwicklungsumgebung für Android darstellt footnote:[https://developer.android.com/studio/, abgerufen 2023-03-27]. Es wurde sich bewusst für eine Canary Version der IDE entschieden, da einige Profiling Tools in der derzeit aktuellen Stable-Version _2021.3_ nicht erwartungsgemäß funktionierten. Da der Autor Vorerfahrung in der Android-Entwicklung aufweist, wurde eine App-Architektur über ein Minimalbeispiel zur Integration von Flutter-Modulen hinaus erstellt. Hintergrund ist das Testen der Performance in realeren Bedingungen und der Test der Einbindung von Flutter-Modulen in bestehende Applikationen.
 
 
-==== iOS App
+==== Modularisierung und Build Flavors
+Android Studio erstellt App Versionen für das Performance Profiling nicht automatisch wenn ein neues Projekt angelegt wird, sondern es muss ein eigener Profile Build type erstellt werden footnote:[https://developer.android.com/studio/profile, abgerufen 2023-03-22]. Um den Code des Flutter-Moduls möglichst sauber von der nativen Implementation zu trennen wurde der Ansatz über sogenannte Build Flavors footnote:[https://developer.android.com/studio/build/build-variants, abgerufen 2023-03-27] gewählt. Mit diesen können einzelne Abhängigkeiten für die Kompilierung (de-)aktiviert werden. Somit wird ausgeschlossen, dass Code des jeweils inaktiven Moduls die zu testende App beeinflusst während der geteilte Code uneingeschränkt wiederverwendet werden kann. 
+
+Ebenfalls nicht standardmäßig enthalten ist eine Möglichkeit, das Performance Profiling zu automatisieren. die Macrobenchmark-Bibliothek kann dazu verwendet werden, UI-Interaktionen mit einer App, bspw. die Startup-Phase, Klicks oder Scrolls, auszuwerten. Dazu benötigt es ein neues Modul, was die UI-Tests beinhaltet und dem Projekt mit wenigen Klicks hinzugefügt werden kann footnote:[https://developer.android.com/topic/performance/benchmarking/macrobenchmark-overview#setup-macrobenchmark, abgerufen 2023-03-27].
+
+NOTE: schwache Argumentation
+
+Um insbesondere den Code zur Messung der Performance für möglichst viele Tests verwenden zu können und weil der Autor in diesem Bereis bereits hinreichende Erfahrung gesammelt hat wurde sich dafür entschieden, eine App-Struktur auf Basis von Clean Architecture footnote:[{xref5}] zu verwenden. Umgesetzt wird diese mit Hilfe von Gradle-Modulen, welche für die logische Unterteilung des Quellcodes und die Erstellung individueller Abhängigkeiten verwendet werden können. Dieser Ansatz wird im Android-Ökosystem oft als _Multi-Module_ oder _Modularization_ bezeichnet footnote:[https://developer.android.com/topic/modularization/patterns, abgerufen 2023-03-27]. Die eindeutige Unterteilung des Quellcodes anhand dessen Aufgaben soll die Wiederverwendbarkeit für weitere Performance Tests erheblich erhöhen und vor allem die Integration des Flutter-Moduls unter realeren Bedingungen ermöglichen.
+
+{imgAndArch} visualisiert die Abhängigkeiten der erstellten Android-Module. Grüne Module repräsentieren Android Module, welche eine App oder einen UI Test erzeugen können. Blaue Module kennzeichnen Android-Bibliotheken, welche Zugriff auf Funktionen des Android SDKs haben und die Unterteilung in verschiedene Aufgaben widerspiegeln (Clean Architecture). Das graue Entity-Modul beinhaltet gemeinsam genutzte Business Logik und hat keine Abhängigkeiten zum Android-Ökosystem. In {tabAndArch} werden die Aufgaben der vorgestellten Module jeweils aufgeschlüsselt.
+
+.{imgAndArch}: Modulstruktur der Android App
+image::res/android-app-architecture.png[]
+
+
+.{tabAndArch}: Inhalt der Module
+,===
+Modulname,Aufgabe
+
+Entity,Business-Logic und Entities, derzeit nur die NewsEntity
+App,Android-Modul mit allen App-relevanten Dateien; UI; verbindet alle anderen Module miteinander
+Interactor,Repositories; Use Cases und die Navigation
+Presentation, ViewModels als Datenquelle für das UI
+FlutterDatasource, Einbindung des Flutter-Moduls
+NativeDatasource, Implementation des nativen API-Calls 
+Benchmark, Modul für UI Tests
+Traceutil, Hilfsmodul um Tracing-Funktionen vereinheitlicht anderen Modulen bereitzustellen
+,===
+
+==== Dependency Injection
+
+NOTE: TODO
+
+AppResult
+
+==== Kommunikation mit der Rest-API
+
+
+
+
+Flutter
+
+
+
+
+.Flutter Modul mit API Request
+[source, Java]
+----
+// FlutterNewsServiceImpl
+override suspend fun getNews(): List<FlutterApiNewsEntity> = withContext(Dispatchers.Main) {
+    // Umwanldung von Callback in Coroutine
+    suspendCoroutine { continuation ->
+        api.getNews {
+            continuation.resume(it)
+        }
+    }
+}
+
+// FlutterNewsDataSource
+override suspend fun getNews(): AppResult<List<NewsEntry>> {
+    return AppResult.Success(newsService.getNews().mapNotNull {
+        it.title?.let {title ->
+            NewsEntry(title) // entity mapping
+        }
+    })
+}
+----
+
+- korrektes Error Handling 
+
+.Host Modul mit API Request
+[source, Java]
+----
+// NewsService 
+interface NewsService {
+    @GET("news") suspend fun getNews(): Response<List<ApiNewsEntry>>
+}
+
+// NativeNewsDataSource
+override suspend fun getNews() = traceAsync(TraceSection.NATIVE_DS_GET_NEWS.traceName) {
+    callApi(
+        call = { newsService.getNews() },
+        mapper = { it.toEntity() }
+    )
+}
+
+//CallApi 
+suspend fun <ApiModel, EntityModel> callApi(
+    call: suspend () -> Response<ApiModel>,
+    mapper: (ApiModel) -> EntityModel,
+): AppResult<EntityModel> {
+    return traceAsync(TraceSection.NATIVE_API_CALL.traceName) {
+        try {
+            val response = call()
+            when {
+                response.isSuccessful -> AppResult.Success(response.body()!!).mapSuccess(mapper)
+                else -> {
+                    AppResult.Error( /* ... */)
+                }
+            }
+        } catch (e: Exception) {
+            /* ... */
+            AppResult.Error(reason)
+        }
+    }
+}
+----
+
+
+
+=== iOS App
 
 autor hat nicht so viel Erfahrung in iOS Programmierung
 
@@ -258,7 +370,7 @@ XCode 14.2
 begonnen mit neuem xcode Projekt, Swift 5, 
 
 
-Das bestehende Flutter-Modul wurde mit der offiziellen Anleitung in das XCode-Projekt eingebunden footnote:[https://docs.flutter.dev/development/add-to-app/ios/project-setup, abgerufen 2023-03-22]. Dabei wurde der Weg über die Einbindung mit cocoapods, einem Dependency Mananger für Swift footnote:[https://cocoapods.org/, abgerufen 2023-03-22], gewählt.
+Das bestehende Flutter-Modul wurde mit der offiziellen Anleitung in das XCode-Projekt eingebunden footnote:[https://docs.flutter.dev/development/add-to-app/ios/project-setup, abgerufen 2023-03-22]. Dabei wurde der Weg über die Einbindung mit cocoapods, einem Dependency Manager für Swift footnote:[https://cocoapods.org/, abgerufen 2023-03-22], gewählt.
 
 Das Flutter-Modul wird 
 
@@ -303,7 +415,7 @@ struct ContentView: View {
 }
 ----
 
-Eine weitere Klasse ist die NewsRepository, die ähnlich zur Android-App entscheidet, ob die Artikel von der Flutter-API oder der nativen API bereitgestellt werden. Desweiteren wird eine Callback-Funktion mitgeliefert um die Daten später im UI anzeigen zu können.
+Eine weitere Klasse ist die NewsRepository, die ähnlich zur Android-App entscheidet, ob die Artikel von der Flutter-API oder der nativen API bereitgestellt werden. Des Weiteren wird eine Callback-Funktion mitgeliefert um die Daten später im UI anzeigen zu können.
 
 .Repository als Entscheidungspunkt für Aufrufe in Flutter oder Swift
 [source,Swift]
@@ -398,7 +510,7 @@ class FlutterDependencies: ObservableObject {
 }
 ----
 
-=== Ergebnisse
+== Ergebnisse
 
 
 android: 
@@ -409,6 +521,8 @@ androidx tracing lib kann helfen, aber nur native
 profile build type muss profile heißen!
 
 microbenchmark gibt systrace und callstack sample zurück
+
+ausprobieren von macrobenchmark und microbenchmark
 
 
 iOS:
