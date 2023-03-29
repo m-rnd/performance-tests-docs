@@ -40,13 +40,21 @@ Abgerufen 2023-03-06
 https://web.archive.org/web/20221005043739/https://blog.codemagic.io/flutter-vs-android-ios-xamarin-reactnative/, +
 Abgerufen 2023-02-12
 
-
-:imgAndArch: Abbildung 1
+:imgTestCase: Abbildung 1
+:imgAndArch: Abbildung 2
+:imgAndCallTree: Abbildung 3
 :tabAndArch: Tabelle 1
 
 == Glossar
-
-Gradle:: Build Tool für u.a. Android-Projekte
+Kotlin:: Programmiersprache von JetBrains, seit 2019 Standard-Programmiersprache für Android-Apps footnote:[https://kotlinlang.org/docs/android-overview.html, abgerufen 2023-03-27]
+Swift:: Programmiersprache von Apple, verwendet um Programme für Apple-Geräte zu schreiben footnote:[https://www.apple.com/de/swift/, abgerufen 2023-03-27]
+Dart:: Programmiersprache, deren Programme mit Hilfe der Dart Engine auf verschiedenen Architekturen ausgeführt werden können footnote:[https://dart.dev/overview, abgerufen 2023-03-27]
+Flutter:: Toolkit für Benutzeroberflächen von plattformunabhängigen Projekte in der Programmiersprache Dart footnote:[https://docs.flutter.dev/resources/faq, abgerufen 2023-03-27]
+Gradle:: Build Tool für u.a. Android-Projekte footnote:[https://developer.android.com/studio/build/gradle-tips, abgerufen 2023-03-27]
+Coroutine:: (hier im Kontext von Kotlin) Konstrukt zum asynchronen Aufruf von Programmcode ohne Bindung an einen bestimmten Thread footnote:[https://kotlinlang.org/docs/coroutines-basics.html, abgerufen 2023-03-28]
+Screen:: aktuelles Navigationsziel einer App, geöffnete Ansicht
+ViewModel:: (im Kontext von Android) eine mögliches Architektur, um die Logik eines Screens und dessen aktuellen Status zu handhaben footnote:[https://developer.android.com/topic/libraries/architecture/viewmodel, abgerufen 2023-03-28]
+Compose:: UI-Framework von Google zur Erstellung von modernen Benutzeroberflächen footnote:[https://developer.android.com/jetpack/compose, abgerufen 2023-03-28]
 
 
 == Motivation
@@ -190,7 +198,7 @@ cocapod
 
 Die Einbindung von iOS UI-Elementen innerhalb eines Flutter UIs ist ebenfalls möglich footnote:iOSview[https://docs.flutter.dev/development/platform-integration/ios/platform-views, abgerufen 2023-03-04].
 
-==== Kommunikation zum Flutter-Modul
+==== Kommunikation zwischen Flutter und der Host-Plattform
 
 Das Flutter Framework stellt sogenannte _Platform Channels_ footnote:PlatChan[https://docs.flutter.dev/development/platform-integration/platform-channels, abgerufen 2023-03-04] zur Kommunikation zwischen der Flutter Engine und dem jeweiligen Host her. Die Nachrichten werden binär serialisiert und primitive Datentypen sind standardmäßig unterstützt. Dem Entwickler stehen folgende Arten von Channels zur Verfügung:
 
@@ -205,19 +213,22 @@ Wichtig beim Aufrufen der Kommunikationsschnittstelle egal welcher Art ist, dass
 Eine weitere Möglichkeit bietet das _ffi_-Plugin footnote:ffi[https://dart.dev/guides/libraries/c-interop, abgerufen 2023-03-04], welches den Aufruf von Funktionen aus C-Bibliotheken auf dem Host ermöglicht. Der Aufruf von Dart-Methoden aus Richtung des Hosts ist damit jedoch nicht möglich, weswegen das Plugin nicht für die geplanten Einsatzgebiete für Flutter-Module relevant ist. 
 
 == Versuchsaufbau
-Die Nutzbarkeit der gefundenen Methoden zum Performance Profiling 
+Die Nutzbarkeit der gefundenen Methoden zum Performance Profiling soll mit einem Versuch erprobt werden.
 zwei apps erstellt
 flutter modul
 eingebunden
 Mockoon für folgenden Datensatz: 
 
+{imgTestCase} illustriert den schematischen Ablauf des Tests. Bei Klick auf ein Download-Label in der App soll eine Anfrage an einen Rest-Server erstellt und gesendet werden, welcher daraufhin mit einem JSON-Payload antwortet. Dieser muss von der App zunächst in Objekte der jeweiligen Programmiersprache deserialisiert werden und wird daraufhin einem weiteren Mapping unterzogen, welches die Daten im API-Format in ein generelleres Format für die App umwandelt. Dies hat den Vorteil, dass das API Model unabhängig von der Logik der App verändert werden und zudem fehlerhafte Rückgabewerte an dieser Stelle behandelt werden können footnote:[https://developer.android.com/topic/architecture/data-layer?continue=https%3A%2F%2Fdeveloper.android.com%2Fcourses%2Fpathways%2Fandroid-architecture%23article-https%3A%2F%2Fdeveloper.android.com%2Ftopic%2Farchitecture%2Fdata-layer#business-models, abgerufen 2023-03-29].
+
+.{imgTestCase}: Bestandteile des Versuchsaufbaus und deren Verbindungen zueinander
+image::res/program-setup-diagram.png[]
+
+Für den Versuch werden neben dem REST-Server jeweils eine App für Android- und iOS-Geräte erstellt und in diese der Aufruf zur REST-API sowohl mit einer nativen Bibliothek als auch über ein Flutter-Modul implementiert. Alle im folgenden beschriebenen Programme und Tools sind in den jeweils angegebenen Versionen auf einem _Macbook Pro 2021 M1 Pro_ mit _macOS 12.6_ Betriebssystem ausgeführt bzw. kompiliert.
+
 === REST-Server
 
-Das Testszenario besteht aus einem API-Aufruf zu einem Rest-Server und der Umwandlung von den resultierenden JSON-Daten zu einem eigenen Datenmodell. 
-Ein lokaler REST-Server bietet zudem eine geringere Latenz durch Netzwerkaufrufe verglichen mit einem externen Server.
-
-.Verbindungen zwischen Native, Flutter und REST
-image::res/program-setup-diagram.png[]
+Als Ausgangspunkt wurde eine JSON Datei mit 750.000 Objekten erstellt, damit eine sichtbare Last während der Verarbeitung der Daten in den Apps entsteht. Ein einzelnes Objekt stellt dabei einen fiktiven Eintrag eines Newstickers dar, wobei dieser nur aus einem Titel mit einer zufällig generierten Sequenz von fünf Ziffern besteht.
 
 .Beispieldaten des lokalen REST-Servers
 [source,json]
@@ -232,20 +243,114 @@ image::res/program-setup-diagram.png[]
   {
     "title": "91582"
   },
-  // [...]
+
+  [...]
+
 ]
 ----
 
+Um den Inhalt dieser Datei als Rückgabewert von einer REST-API bereitstellen zu können, wird das Programm Mockoon footnote:[https://mockoon.com/ abgerufen 2023-03-27] verwendet. Mit diesem kann unter anderem ein lokaler REST-Server gestartet und darin Routen mit entsprechenden Rückgabewerten erstellt werden. Zuerst wurde mit der dynamischen Generierung von Testdaten experimentiert, aber dieser Ansatz war sowohl langsam als auch nichtdeterministisch, weswegen sich für einen statischen Datensatz entschieden wurde.
 
 
-Macbook Pro 2021 M1 Pro mit macOS 12.6
 === Flutter Modul
-kommunikaton zwischen Flutter und native
+
+Das verwendete Flutter Modul wurde manuell (ohne Benutzung des Plugins für Android Studio) anhand der offiziellen Dokumentation und mit der Flutter-Version _3.7.7_ erstellt footnote:[https://docs.flutter.dev/development/add-to-app/android/project-setup#manual-integration, abgerufen 2023-03-29]. 
+
+
+
+Für die Kommunikation mit der REST API wird die `http` Bibliothek von Flutter verwendet, welche Teil der offiziellen Dart-Bibliotheken ist footnote:[https://pub.dev/packages/http, abgerufen 2023-03-29]. Die Funktion `_rawApiCall` ist dabei eine Generalisierung von API-Aufrufen an den REST Server und gibt ein generisches JSON-Objekt als `Map<String, dynamic>` zurück. Eine Behandlung möglicher Netzwerkfehler wurde an dieser Stelle noch nicht implementiert.
+
+.APi call 
+[source, Dart]
+----
+class ApiService {
+    // Android Emulator and iOS Simulator have different local network configurations
+    // change this to the local host machine address when testing with a real device
+    final baseUrl =
+        Platform.isAndroid ? "http://10.0.2.2:3001/" : "http://0.0.0.0:3001/";
+
+    dynamic _rawApiCall(String endpoint) async {
+        try {
+            final response = await get(Uri.parse(baseUrl + endpoint));
+            final json = jsonDecode(response.body);
+            return json;
+        } catch (e) {
+            print(e.toString()); // TODO error handling
+            return null;
+        }
+    }
+
+    dynamic getNews() async {
+        return _rawApiCall("news");
+    }
+}
+----
+
+Damit die Antwort der API auch an das jeweilige Host-System zurückgegeben werden kann muss zuerst die Schnittstelle der zuvor erwähnten Bibliothek _Pigeon_ definiert werden, aus der die eigentlichen `MessageChannel`-Implementationen generiert werden. In dieser wird der für den Testfall relevante Aufruf `getNews` definiert, welcher eine Liste von serialisierbaren `ApiNewsEntity` Objekten zurückgibt. Diese Funktion wird mit der Annotation @async gekennzeichnet, welche ebenfalls von Pigeon stammt und der Funktion auf den Host-Plattformen einen Callback Handler hinzufügt. Somit kann in diesem Fall die REST API aufgerufen werden ohne währenddessen das Programm zu blockieren. 
+
+.definierte Pigeon-Schnittstelle
+[source, Dart]
+----
+class FlutterApiNewsEntity {
+  String? title;
+}
+
+@FlutterApi()
+abstract class FlutterNewsApi {
+  @async
+  List<FlutterApiNewsEntity> getNews();
+}
+----
+
+Als Verbindung zwischen dem REST Client und Pigeon steht schließlich die `NewsApi`-Klasse, welche die von Pigeon generierte FlutterNewsApi implementiert und beim Aufruf von `getNews` die Daten vom Service abruft. Außerdem geschieht hier das Mapping vom API Model zum eigentlichen Datenmodell in Flutter.
+
+.Implementierung der Pigeon API mit mapping
+[source, Dart]
+----
+class NewsApi implements FlutterNewsApi {
+    final ApiService _api = ApiService();
+
+    @override
+    Future<List<FlutterApiNewsEntity?>> getNews() async {
+        final jsonNews = await _api.getNews();
+        if (jsonNews == null) return [];
+
+        // Umwandlung von JSON- zu Dart-Objekt erfolgt hier manuell
+        return (jsonNews as List<dynamic>).map((e) => fromJSON(e)).toList();
+    }
+}
+
+FlutterApiNewsEntity fromJSON(Map json) {
+  return FlutterApiNewsEntity(title: json["title"]);
+}
+----
+
+Schlussendlich wird die API in der `main`-Methode der Dart-Programms initialisiert und zudem noch eine Debug Nachricht über den aktuellen Build-Typ ausgegeben. Ein Aufruf von `runApp()`, wie bei Flutter-Apps üblich, wird an dieser Stelle nicht benötigt, da kein UI angezeigt werden soll.
+
+.Einstiegspunkt in das Flutter-Modul
+[source, Dart]
+----
+void main() {
+  String buildMode = kReleaseMode ? "release" : kProfileMode ? "profile" : "debug";
+  print("Flutter running in $buildMode mode.");
+
+  FlutterNewsApi.setup(NewsApi());
+}
+----
+
+Falls das Flutter-Modul in eine iOS App eingebunden wird kann mit Hilfe der Bibliothek _signposts_ ein nativer Aufruf der iOS API _os_signpost_ erfolgen, welche wiederum die Ausführungszeiten der jeweiligen Codestellen in einem Performance Profiling anzeigt footnote:[https://github.com/gaaclarke/signposts, abgerufen 2023-03-29]. Es wurde leider keine vergleichbare Bibliothek für Android Hostsysteme gefunden, weswegen die Messungen auch nicht in den vorangegangenen Listings zu finden sind.
+
+.Exemplarischer Signpost für iOS für das Mapping von JSON zum Datenmodell im Flutter-Modul
+[source, Dart]
+----
+signposts.Interval interval = signposts.Interval('start getNews.fromJSON');
+final news = (jsonNews as List<dynamic>).map((e) => fromJSON(e)).toList();
+interval.end('end getNews.fromJSON');
+----
 
 === Android App
 
-Für die Erstellung der Android App wurde das Programm 
-_Android Studio _ in der Version _2022.3.1 Canary 5_ verwendet, welches die offizielle Entwicklungsumgebung für Android darstellt footnote:[https://developer.android.com/studio/, abgerufen 2023-03-27]. Es wurde sich bewusst für eine Canary Version der IDE entschieden, da einige Profiling Tools in der derzeit aktuellen Stable-Version _2021.3_ nicht erwartungsgemäß funktionierten. Da der Autor Vorerfahrung in der Android-Entwicklung aufweist, wurde eine App-Architektur über ein Minimalbeispiel zur Integration von Flutter-Modulen hinaus erstellt. Hintergrund ist das Testen der Performance in realeren Bedingungen und der Test der Einbindung von Flutter-Modulen in bestehende Applikationen.
+Für die Erstellung der Android App wurde das Programm _Android Studio_ in der Version _2022.3.1 Canary 5_ verwendet, welches die offizielle Entwicklungsumgebung für Android darstellt footnote:[https://developer.android.com/studio/, abgerufen 2023-03-27]. Es wurde sich bewusst für eine Canary Version der IDE entschieden, da einige Profiling Tools in der derzeit aktuellen Stable-Version _2021.3_ nicht erwartungsgemäß funktionierten. Da der Autor Vorerfahrung in der Android-Entwicklung aufweist, wurde eine App-Architektur über ein Minimalbeispiel zur Integration von Flutter-Modulen hinaus erstellt. Hintergrund ist das Testen der Performance in realeren Bedingungen und der Test der Einbindung von Flutter-Modulen in bestehende Applikationen.
 
 
 ==== Modularisierung und Build Flavors
@@ -277,28 +382,46 @@ Benchmark, Modul für UI Tests
 Traceutil, Hilfsmodul um Tracing-Funktionen vereinheitlicht anderen Modulen bereitzustellen
 ,===
 
-==== Dependency Injection
+==== Dependency Injection und Hilfsklassen
 
 NOTE: TODO
 
-AppResult
+hilt als DI, footnote:[https://developer.android.com/training/dependency-injection/hilt-android, abgerufen 2023-03-29]
+
+hilt application class ist nicht kompatibel mit microbenchmark, da `Application` Klasse eine `@HiltApplication` Annotation benötigt, welche dem microbenchmark aber nicht hinzugefügt werden kann footnote:[https://issuetracker.google.com/issues/258256854, abgerufen 2023-03-29]
+
+
+Des Weiteren wurde eine `AppResult`-Klasse als generischer Wrapper für Rückgabewerte hinzugefügt. Eine Funktion kann so bspw. den Rückgabewert `AppResult<String>` besitzen und entweder einen validen String als `AppResult.Success(String)` oder im Fehlerfall die entsprechende Meldung als `AppResult.Error(ErrorReason)` zurückliefern footnote:[https://developer.android.com/topic/architecture/data-layer?continue=https%3A%2F%2Fdeveloper.android.com%2Fcourses%2Fpathways%2Fandroid-architecture%23article-https%3A%2F%2Fdeveloper.android.com%2Ftopic%2Farchitecture%2Fdata-layer#expose-errors, abgerufen 2023-03-29].
 
 ==== Kommunikation mit der Rest-API
 
+Innerhalb der folgenden Quellcode-Ausschnitte wird die Funktion `traceAsync` verwendet, welche von der durch das Paket `androidx.core.os` bereitgestellten Funktion `trace` adaptiert wurde und die Messung der Ausführungszeit von Coroutinen ermöglicht. Als eindeutige Identifizierung (_Cookie_) zur Unterscheidung von mehreren gleichzeitig laufenden Messungen desselben Namens wird hier die aktuelle Systemzeit verwendet, wenn nicht anders angegeben.
 
+.traceAsync Funktion zur Messung der Ausführungszeit von Coroutinen
+[source, Java]
+----
+inline fun <T> traceAsync(
+    sectionName: String,
+    cookie: Int = System.currentTimeMillis().toInt(),
+    block: () -> T
+): T {
+    Trace.beginAsyncSection(sectionName, cookie)
+    try {
+        return block()
+    } finally {
+        Trace.endAsyncSection(sectionName, cookie)
+    }
+}
+----
 
+Der Aufruf der von _Pigeon_ generierten `api` wird innerhalb eines `Services` gekapselt. Dies hat den Hintergrund, um von einem Callback in einen für Kotlin typischeren asynchronen Aufruf mit Coroutines zu gelangen. In der `DataSource` wird schließlich das von Pigeon bereitgestellte Datenmodell in das App-Eigene `NewsEntry` umgewandelt und gleichzeitig Einträge ohne Titel gefiltert. Kein Teil des Mappings ist bisher ein korrektes Error Handling. Wenn innerhalb des Flutter-Moduls ein Fehler auftritt wird somit eine leere Liste von `NewsEntries` zurückgegeben und eine weitere Fehlerbehandlung ist bisher nicht möglich. 
 
-Flutter
-
-
-
-
-.Flutter Modul mit API Request
+.Flutter Modul mit API Request an den von Pigeon generierten Code
 [source, Java]
 ----
 // FlutterNewsServiceImpl
 override suspend fun getNews(): List<FlutterApiNewsEntity> = withContext(Dispatchers.Main) {
-    // Umwanldung von Callback in Coroutine
+    // Umwandlung von Callback in Coroutine
     suspendCoroutine { continuation ->
         api.getNews {
             continuation.resume(it)
@@ -316,13 +439,23 @@ override suspend fun getNews(): AppResult<List<NewsEntry>> {
 }
 ----
 
-- korrektes Error Handling 
+Für die Kommunikation mit dem REST-Server in dem nativen Teil der App wurde sich für die Bibliothek _Retrofit_ footnote:[https://github.com/square/retrofit, abgerufen 2023-03-27] entschieden, da der Autor bereits einige Erfahrungen sammeln konnte. Das Interface `NewsService` legt fest, welche Endpunkte verfügbar sind und wie die Rückgabewerte aussehen. Im aktuellen Fall wird eine Liste von `ApiNewsEntry` Objekten erwartet, welche einen optionalen Titel haben. Entries ohne Titel werden auch hier übersprungen und zusätzlich eine Fehlermeldung generiert. Die eigentlichen Anfragen an die API werden in der Funktion `callApi` abstrahiert, welche die Fehlerbehandlung und das Mapping zusammenfasst.
 
 .Host Modul mit API Request
 [source, Java]
 ----
+// ApiNewsEntry mit Mapping-Vorschrift
+data class ApiNewsEntry(
+    val title: String?
+): ApiEntity<NewsEntry> {
+    override fun toEntity() = when {
+        title == null -> mappingError(::title)
+        else -> NewsEntry(title)
+    }
+}
+
 // NewsService 
-interface NewsService {
+interfacé NewsService {
     @GET("news") suspend fun getNews(): Response<List<ApiNewsEntry>>
 }
 
@@ -356,10 +489,75 @@ suspend fun <ApiModel, EntityModel> callApi(
 }
 ----
 
+Der Aufruf der API erfolgt indirekt über den `GetNewsUseCase` und das `NewsRepository`. Momentan werden die Daten unverändert zurückgegeben, in komplexeren Szenarien könnten an diesen Stellen aber noch weitere Use Cases und Datenquellen miteinander verbunden werden. Ein wichtiges Detail innerhalb des NewsRepositories ist, dass die `NewsDataSource` als Interface über Hilt injiziert und die jeweilige Implementierung durch die zuvor erwähnten Build Flavors bereitgestellt wird. An dieser Stelle wird folglich je nach Flavor entweder die native oder in Flutter implementierte `DataSource` aufgerufen.
+
+.Use Case und Repository als Platz für zukünftige Erweiterungen
+[source, Java]
+----
+// Use Case
+suspend operator fun invoke() = newsRepository.getNews()
+
+// NewsRepositoryImpl
+override suspend fun getNews() = traceAsync(TraceSection.REPOSITORY_GET_NEWS.traceName) {
+    newsDataSource.getNews()
+}
+----
+
+Schließlich wird der Use Case mit dem UI verbunden. Um die Logik von der Gestaltung des Screens zu trennen, wird der entsprechende Code in ein sog. `ViewModel` bzw. einen `Screen` aufgeteilt. Das `ViewModel` kommuniziert indirekt über UI States mit dem Screen. Die beiden UI States `Init` und `Loading` werden verwendet um Statusmeldungen vom `ViewModel` aus zum UI senden und dieses entsprechend zu aktualisieren. Bei Interaktion mit dem Screen werden im Umkehrschluss Funktionen des ViewModels aufgerufen, zu sehen bei Klick auf den Download-Knopf. Es wurde sich bewusst für einen klickbaren Text anstelle eines Buttons entschieden, da der Text keine Animation besitzt und somit keine unnötigen Ausgaben im Performance Profiler erzeugt. Der UI State wird über die Funktion `collectAsState` vom aktuellen Screen abonniert und dieser bei jeder Änderung des States automatisch aktualisiert.
+
+
+.Main Screen mit Verbindung zum ViewModel
+[source, Java]
+----
+@Composable
+fun MainScreen(viewModel: MainViewModel) = with(viewModel) {
+    val uiState by uiState.collectAsState()
+    MainContent(uiState = uiState, onDownloadClick = ::onDownloadClick)
+}
+
+@Composable
+private fun MainContent(uiState: MainUiState, onDownloadClick: () -> Unit) {
+    Surface(/*...*/) {
+        Column(/*...*/) {
+            Text(
+                text = "Download",
+                modifier = Modifier.clickable(
+                    enabled = uiState !is MainUiState.Loading,
+                    /*...*/
+                    onClick = onDownloadClick
+                )
+            )
+            
+            if (uiState is MainUiState.Loading) Text("downloading...")
+        }
+    }
+}
+----
+
+.Click Handler im ViewModel
+[source, Java]
+----
+//MainViewModel
+fun onDownloadClick() = viewModelScope.launch {
+    traceAsync(TraceSection.MAIN_VM_ON_CLICK.traceName) {
+        _uiState.tryEmit(MainUiState.Loading)
+        getNewsUseCase()
+        _uiState.tryEmit(MainUiState.Init)
+    }
+}
+----
+
+Den kompletten Programmdurchlauf von Beginn bei Klick auf das Textlabel bis hin zum API Call zeigt {imgAndCallTree}. Als zusätzlicher Kontext wurden auch die benutzten Module in den jeweiligen Farben mit abgebildet.
+
+.{imgAndCallTree}: aufgerufene Klassen, Funktionen und beteiligte Module bei Klick auf den Download-Button 
+image::res/android-call-tree.png[]
+
+
 
 
 === iOS App
 
+Im Gegensatz zu Android hat der Autor bisher nur wenig Erfahrung in der Programmierung von iOS Apps. 
 autor hat nicht so viel Erfahrung in iOS Programmierung
 
 
@@ -385,7 +583,7 @@ struct NewsEntry {
 }
 ----
 
-Basierend auf dem automatisch generierten ContentView des SwiftUi-Projektes wurde ein Button zum Start des Downloads und ein Statustext hinzugefügt. 
+Basierend auf dem automatisch generierten ContentView des SwiftUi-Projektes wurde ein Button zum Start des Downloads und ein Statustext hinzugefügt. Durch die `@State`-Annotation der Variable `isLoading` wird das `View` automatisch neu geladen, wenn sich die Variable ändert.
 
 .UI der Applikation mit Button zum Start des Downloads und Textlabel, welches den Download-Status anzeigt
 [source, Swift]
@@ -512,8 +710,15 @@ class FlutterDependencies: ObservableObject {
 
 == Ergebnisse
 
+flutter:
+unterschiede in android und ios müssen abstrahiert werden (signpost)
+generische error klasse noch nicht in pigeon enthalten
 
 android: 
+
+obwohl nur wenig Zeit für Projektsetup in Android viele Probleme
+
+kein error handling in flutter modul serialisiert
 
 macrobenchmarks geben nur systrace zurück, keinen method trace
 androidx tracing lib kann helfen, aber nur native
