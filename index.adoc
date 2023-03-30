@@ -43,7 +43,11 @@ Abgerufen 2023-02-12
 :imgTestCase: Abbildung 1
 :imgAndArch: Abbildung 2
 :imgAndCallTree: Abbildung 3
+:imgXCodeMeasure: Abbildung 4
+:imgInstruments: Abbildung 5
 :tabAndArch: Tabelle 1
+:tabAndMeasure: Tabelle 2
+:tabiOSMeasureRepeatedly: Tabelle 3
 
 == Glossar
 Kotlin:: Programmiersprache von JetBrains, seit 2019 Standard-Programmiersprache für Android-Apps footnote:[https://kotlinlang.org/docs/android-overview.html, abgerufen 2023-03-27]
@@ -55,7 +59,9 @@ Coroutine:: (hier im Kontext von Kotlin) Konstrukt zum asynchronen Aufruf von Pr
 Screen:: aktuelles Navigationsziel einer App, geöffnete Ansicht
 ViewModel:: (im Kontext von Android) eine mögliches Architektur, um die Logik eines Screens und dessen aktuellen Status zu handhaben footnote:[https://developer.android.com/topic/libraries/architecture/viewmodel, abgerufen 2023-03-28]
 Compose:: UI-Framework von Google zur Erstellung von modernen Benutzeroberflächen footnote:[https://developer.android.com/jetpack/compose, abgerufen 2023-03-28]
-
+Cocoapods:: Dependency Manager für Swift footnote:[https://cocoapods.org/, abgerufen 2023-03-22]
+Performance Profiler:: (android)
+Instruments:: Tool zur Performance-Analyse von Programmen, welche für das Apple Ökosystem entwickelt wurden footnote:[https://help.apple.com/instruments/mac/current/#/dev7b09c84f5, abgerufen 2023-03-29]
 
 == Motivation
 Android iOS 
@@ -260,7 +266,7 @@ Das verwendete Flutter Modul wurde manuell (ohne Benutzung des Plugins für Andr
 
 Für die Kommunikation mit der REST API wird die `http` Bibliothek von Flutter verwendet, welche Teil der offiziellen Dart-Bibliotheken ist footnote:[https://pub.dev/packages/http, abgerufen 2023-03-29]. Die Funktion `_rawApiCall` ist dabei eine Generalisierung von API-Aufrufen an den REST Server und gibt ein generisches JSON-Objekt als `Map<String, dynamic>` zurück. Eine Behandlung möglicher Netzwerkfehler wurde an dieser Stelle noch nicht implementiert.
 
-.APi call 
+.API call 
 [source, Dart]
 ----
 class ApiService {
@@ -356,7 +362,7 @@ Für die Erstellung der Android App wurde das Programm _Android Studio_ in der V
 ==== Modularisierung und Build Flavors
 Android Studio erstellt App Versionen für das Performance Profiling nicht automatisch wenn ein neues Projekt angelegt wird, sondern es muss ein eigener Profile Build type erstellt werden footnote:[https://developer.android.com/studio/profile, abgerufen 2023-03-22]. Um den Code des Flutter-Moduls möglichst sauber von der nativen Implementation zu trennen wurde der Ansatz über sogenannte Build Flavors footnote:[https://developer.android.com/studio/build/build-variants, abgerufen 2023-03-27] gewählt. Mit diesen können einzelne Abhängigkeiten für die Kompilierung (de-)aktiviert werden. Somit wird ausgeschlossen, dass Code des jeweils inaktiven Moduls die zu testende App beeinflusst während der geteilte Code uneingeschränkt wiederverwendet werden kann. 
 
-Ebenfalls nicht standardmäßig enthalten ist eine Möglichkeit, das Performance Profiling zu automatisieren. die Macrobenchmark-Bibliothek kann dazu verwendet werden, UI-Interaktionen mit einer App, bspw. die Startup-Phase, Klicks oder Scrolls, auszuwerten. Dazu benötigt es ein neues Modul, was die UI-Tests beinhaltet und dem Projekt mit wenigen Klicks hinzugefügt werden kann footnote:[https://developer.android.com/topic/performance/benchmarking/macrobenchmark-overview#setup-macrobenchmark, abgerufen 2023-03-27].
+Ebenfalls nicht standardmäßig enthalten ist eine Möglichkeit, das Performance Profiling zu automatisieren. die Macrobenchmark-Bibliothek kann dazu verwendet werden, UI-Interaktionen mit einer App, bspw. die Startup-Phase, Klicks oder Scrolls, auszuwerten. Dazu benötigt es ein neues Modul, was die UI-Tests beinhaltet und dem Projekt mit wenigen Klicks hinzugefügt werden kann footnote:[https://developer.android.com/topic/performance/benchmarking/macrobenchmark-overview#setup-macrobenchmark, abgerufen 2023-03-27]. Wichtig ist hierbei, dass der _Build Type_ für das Profiling `profile` benannt wird (anstatt wie im Tutorial angegeben `benchmark`), damit auch im Flutter-Modul der korrekte Typ ausgewählt wird 
 
 NOTE: schwache Argumentation
 
@@ -557,23 +563,9 @@ image::res/android-call-tree.png[]
 
 === iOS App
 
-Im Gegensatz zu Android hat der Autor bisher nur wenig Erfahrung in der Programmierung von iOS Apps. 
-autor hat nicht so viel Erfahrung in iOS Programmierung
+Für die Implementierung der iOS App kam das Programm `XCode` in der Version `14.2` zum Einsatz. Als Basis dient ein neues iOS Projekt mit Swift 5 und SwiftUI, welches über den von XCode bereitgestellten Wizard erstellt wurde. Im Gegensatz zu Android hat der Autor bisher nur wenig Erfahrung in der Programmierung von iOS Apps. Aus diesem Grund und auch um Konflikte wie bei den Bibliotheken _Microbenchmark_ und _Hilt_ zu vermeiden wurde der Architektur des iOS-Projektes ein geringerer Stellenwert beigemessen. 
 
-
-durch vorherige schwierigkeiten mit di wurde die hier nicht verwendet
-
-
-XCode 14.2
-begonnen mit neuem xcode Projekt, Swift 5, 
-
-
-Das bestehende Flutter-Modul wurde mit der offiziellen Anleitung in das XCode-Projekt eingebunden footnote:[https://docs.flutter.dev/development/add-to-app/ios/project-setup, abgerufen 2023-03-22]. Dabei wurde der Weg über die Einbindung mit cocoapods, einem Dependency Manager für Swift footnote:[https://cocoapods.org/, abgerufen 2023-03-22], gewählt.
-
-Das Flutter-Modul wird 
-
-
-Zunächst wurde identisch zur Android-Implementation eine Klasse zur Repräsentation eines einzelnen Artikels der API erstellt.
+Das bestehende Flutter-Modul wurde mit der offiziellen Anleitung in das XCode-Projekt eingebunden footnote:[https://docs.flutter.dev/development/add-to-app/ios/project-setup, abgerufen 2023-03-22]. Dabei wurde der Weg über die Einbindung mit _Cocoapods_ gewählt. Zunächst wurde identisch zur Android-Implementation eine Klasse zur Repräsentation eines einzelnen Artikels der API erstellt.
 
 .App Entity für die Repräsentation eines News-Eintrages
 [source, Swift]
@@ -629,7 +621,30 @@ struct NewsRepository {
 }
 ----
 
-Die native Implementation ist über das Alamofire-Paket realisiert. Zuerst wird die API-Response von JSON in ein `ApiNewsEntry`-Objekt deserialisiert, welches einen optionalen Titel beseitzt. Im anschließenden Mapping werden Artikel in die zuvor erläuterte `NewsEntry`-Klasse umgewandelt und Artikel mit fehlendem Titel dabei übersprungen. Zuletzt wird je nach Ausgang des Requests entweder die Liste von `NewsEntry`s oder eine leere Liste zurückgegeben. 
+Bereits bei der Implementation des Flutter-Moduls wurde die `os_signpost` API vorgestellt. Diese kommt auch in der iOS App selbst zur Anwendung um die Ausführungszeit bestimmter Stellen im Code innerhalb des Performance Profilings zu visualisieren. Um den Aufruf einfacher zu gestalten entstand die `Signposter`-Klasse, welche auch in folgenden Listings verwendet wird.
+
+.UI der Applikation mit Button zum Start des Downloads und Textlabel, welches den Download-Status anzeigt
+[source, Swift]
+----
+class Signposter: ObservableObject {
+    lazy private var log = OSLog(
+        subsystem: "test.fi-news-ios",
+        category: "PointsOfInterest"
+    )
+    lazy private var signpostID = OSSignpostID(log: log)
+    
+    
+    func beginInterval(_ name: String) {
+        os_signpost(.begin, log: log, name: "native", "begin %{public}s", name)
+    }
+    
+    func endInterval(_ name: String) {
+         os_signpost(.end,log: log, name: "native", "end %{public}s", name)
+    }
+}
+----
+
+Die native Implementation des REST-Clients ist über das Paket _Alamofire_ realisiert footnote:[https://github.com/Alamofire/Alamofire, 2023-03-20]. Zuerst wird die API-Response von JSON in ein `ApiNewsEntry`-Objekt deserialisiert, welches einen optionalen Titel besitzt. Im anschließenden Mapping werden Artikel in die bereits vorgestellte `NewsEntry`-Klasse umgewandelt und Artikel mit fehlendem Titel dabei übersprungen. Zuletzt wird je nach Ausgang des Requests entweder die Liste von `NewsEntry`s oder eine leere Liste zurückgegeben. 
 
 .native Implementation des REST-Clients über Alamofire
 [source, Swift]
@@ -662,12 +677,7 @@ struct AlamofireClient {
 }
 ----
 
-flutter engine erstellt und registriert
-in echtem projekt sollte engine wiederverwendet werden
-flutter api (pigeon) erstellt
-getNEws aufgerufen 
-mapping zu internen Datentypen
-
+In der `FlutterDependencies`-Klasse, welche ebenfalls vom Repository aufgerufen werden kann, wird die FlutterEngine initialisiert und gestartet. In einem Projekt mit mehreren Stellen, an denen die Engine benötigt wird, sollte diese wiederverwendet werden um unnötigen Overhead zu reduzieren. Quasi identisch zur Implementation in der Android App wird die von Pigeon generierte `FlutterNewsApi` verwendet um die News-Einträge abzurufen und in das App-eigene Datenmodell zu mappen.
 
 .Flutter Dependencies mit Signpost-Messungen
 [source,Swift]
@@ -707,62 +717,260 @@ class FlutterDependencies: ObservableObject {
     }
 }
 ----
+---
 
-== Ergebnisse
+Als Ergebnis des Versuchsaufbaus entstanden ein Flutter-Modul und zwei Apps zum Download eines Testdatensatzes über eine REST-Schnittstelle. Im Vergleich zu bestehenden Minimalbeispielen, ein Flutter-Modul einzubinden, wurde hier bewusst kein UI innerhalb des Moduls erstellt, um auch diese Art der Nutzung zu untersuchen. 
 
-flutter:
-unterschiede in android und ios müssen abstrahiert werden (signpost)
-generische error klasse noch nicht in pigeon enthalten
+INFO:: Bild von Apps einfügen
 
-android: 
+== Versuchsdurchführung
 
-obwohl nur wenig Zeit für Projektsetup in Android viele Probleme
+Mit den erstellten Apps für Android und iOS und dem Flutter-Modul sollen im folgenden Messungen der Performance vorgenommen werden, bei denen pro Plattform jeweils die native Implementation mit der Implementation im Flutter-Modul verglichen werden soll. Zuerst werden die Apps im Profile Mode auf ein echtes Gerät installiert und manuell analysiert und daraufhin verschiedene automatische Testmöglichkeiten evaluiert.
 
-kein error handling in flutter modul serialisiert
+=== Android
+
+
+Zuerst wurde die App im Profile Mode gestartet und mit dem _Performance Profiler_ von Android Studio untersucht. Mit dem Record Mode _Callstack Sample_ ist es möglich, die Ausführungszeit aller Methodenaufrufe auf dem Hostsystem auszugeben. Wichtig dabei ist, dass der Code im Gegensatz zum Release Modus nicht durch Tools wie bspw. _R8_ optimiert werden darf, da die Methodennamen bei diesem Prozess verloren gehen footnote:[https://developer.android.com/studio/build/shrink-code, abgerufen 2023-03-20]. Leider werden bei Aufrufen innerhalb des Fluttermoduls nur die jeweiligen Speicheradressen angezeigt, was die Zuordnung zum aufgerufenen Code ohne weitere Tools unmöglich macht. Dieses Ergebnis ist auch im Debug Mode der App festzustellen. Es ist möglich, eine Aufnahme im _.trace_-Dateiformat der Variante _simpleperf_ zu speichern und später erneut im Profiler zu öffnen. 
+
+Der Record Mode _System Trace_ stellt nur Informationen für aufgerufene Systemfunktionen bereit und kann dementsprechend weder für die Auswertung von nativem App-Code noch dem Fluttermodul verwendet werden. Die resultierende Trace-Datei kann jedoch im Gegensatz zum _Callstack Sample_ in dem Online-Tool _Perfetto_ geöffnet werden footnote:[https://ui.perfetto.dev/, abgerufen 2023-03-20]. Dieses bietet die Möglichkeit, in der Aufnahme auch andere Prozesse zu untersuchen und gibt zusätzlich einen Überblick über weitere Geräteinformationen wie bspw. die CPU-Frequenz oder den Batteriestatus. Bei den beiden weiteren Modes _Java/Kotlin Method Trace_ und _Java/Kotlin Method Trace (legacy)_ konnte während den Versuchen kein Mehrwert erkannt werden.
+
+
+Unabhängig vom Profiler kann die Performance einer Android App mit der Bibliothek _Macrobenchmark_ getestet werden. Mit dieser können UI Tests erstellt und nach zuvor festgelegten Metriken ausgewertet werden. Ein solcher UI Test wurde erstellt um auf das Download-Label zu klicken und danach bis zum Verschwinden des Ladetextes zu warten.
+
+.UI Test 
+[source,Java]
+----
+pressHome()
+startActivityAndWait()
+val downloadButton = By.text("Download")
+device.wait(Until.hasObject(downloadButton), 5_000)
+val clickableObject = device.findObject(downloadButton)
+if (clickableObject == null) {
+    Assert.fail("No clickable view found in hierarchy")
+}
+clickableObject.click()
+device.wait(Until.gone(By.text("downloading...")), 30_000)
+----
+
+komisches tool nur einzelne messungen mit callstack sample, nicht wirklich nutzbar
+
+messung nach traces
+
+
+
+.{tabAndMeasure}: Trace-Messungen, 10 Durchläufe, in Millisekunden
+,===
+,,Android,,,Flutter,,
+
+,,Min,Median,Max,Min,Median,Max
+Provide Retrofit,GSON,"0,7","0,7","0,7",,,
+,HTTP Client,"3,2","3,3","4,1",,,
+,Logging,"0,1","0,1","0,1",,,
+,Service,"0,1","0,1","0,1",,,
+,Retrofit,"0,4","0,4","0,5",,,
+Provide Flutter,FlutterEngine,,,,"42,3","47,4","93,3"
+,NewsApi (Pigeon),,,,"0,1","0,1","0,2"
+,NewsService,,,,0,0,"0,1"
+Service,CallAPI,"2.169,20","2.355,50","3.398,90","2.887,20","4.059,40","4.907,50"
+,Mapping,"146,8","168,8","198,2","24,8","30,1","84,2"
+MainViewModel,onDownloadClick,"2.316,60","2.529,30","3.598,10","2.916,60","4.141,10","4.932,60"
+,===
+
+Zeit insgesamt: Flutter: 2m37s, Android: 2m29
+
+
+
+ausgabe flutter
+
+    DownloadBenchmark_download
+    FINewsTrace_FlutterApiModule.provideFlutterEngineMs   min    43,8,   median    46,6,   max    53,4
+    FINewsTrace_FlutterApiModule.provideFlutterNewsApiMs   min     0,1,   median     0,1,   max     0,1
+    FINewsTrace_FlutterApiModule.provideFlutterNewsServiceMs   min     0,0,   median     0,0,   max     0,0
+    FINewsTrace_FlutterNewsDataSource.getNews.mappingMs   min    27,1,   median    30,2,   max    88,6
+    FINewsTrace_FlutterNewsDataSource.getNewsMs   min 2.545,5,   median 3.227,8,   max 3.828,7
+    FINewsTrace_MainViewModel.onDownloadClickMs   min 2.634,5,   median 3.258,5,   max 3.859,1
+    FINewsTrace_NewsRepositoryImpl.getNewsMs   min 2.634,2,   median 3.258,2,   max 3.858,8
+    frameDurationCpuMs   P50     10,8,   P90     95,1,   P95     98,5,   P99    102,5
+    frameOverrunMs   P50     -4,7,   P90    115,4,   P95    119,4,   P99    122,0
+    Traces: Iteration 0 1 2 3 4
+
+    BUILD SUCCESSFUL in 1m 26s
+
+----
+
+DownloadBenchmark_download
+FINewsTrace_FlutterApiModule.provideFlutterEngineMs   min    42,3,   median    47,4,   max    93,3
+FINewsTrace_FlutterApiModule.provideFlutterNewsApiMs   min     0,1,   median     0,1,   max     0,2
+FINewsTrace_FlutterApiModule.provideFlutterNewsServiceMs   min     0,0,   median     0,0,   max     0,1
+FINewsTrace_FlutterNewsDataSource.getNews.mappingMs   min    24,8,   median    30,1,   max    84,2
+FINewsTrace_FlutterNewsDataSource.getNewsMs   min 2.887,2,   median 4.059,4,   max 4.907,5
+FINewsTrace_MainViewModel.onDownloadClickMs   min 2.916,6,   median 4.141,1,   max 4.932,6
+FINewsTrace_NewsRepositoryImpl.getNewsMs   min 2.916,3,   median 4.140,7,   max 4.932,4
+frameDurationCpuMs   P50      9,6,   P90     95,0,   P95     99,4,   P99    121,5
+frameOverrunMs   P50     -3,2,   P90    109,7,   P95    120,3,   P99    140,5
+Traces: Iteration 0 1 2 3 4 5 6 7 8 9
+
+BUILD SUCCESSFUL in 2m 37s
+
+
+
+
+
+ausgabe native
+    DownloadBenchmark_download
+    FINewsTrace_MainViewModel.onDownloadClickMs   min 2.541,9,   median 3.603,0,   max 4.202,0
+    FINewsTrace_NativeNewsDataSource.getNewsMs   min 2.541,7,   median 3.602,7,   max 4.201,6
+    FINewsTrace_NewsRepositoryImpl.getNewsMs   min 2.541,7,   median 3.602,7,   max 4.201,6
+    FINewsTrace_RetrofitApiModule.provideGsonMs   min     0,7,   median     0,7,   max     0,8
+    FINewsTrace_RetrofitApiModule.provideHttpClientMs   min     3,1,   median     3,3,   max     3,8
+    FINewsTrace_RetrofitApiModule.provideLoggingInterceptorMs   min     0,1,   median     0,1,   max     0,1
+    FINewsTrace_RetrofitApiModule.provideNewsServiceMs   min     0,1,   median     0,1,   max     0,1
+    FINewsTrace_RetrofitApiModule.provideRetrofitMs   min     0,4,   median     0,4,   max     0,4
+    FINewsTrace_callApi.callMs   min 2.428,2,   median 3.445,1,   max 4.019,8
+    FINewsTrace_callApi.mappingMs   min   113,0,   median   157,0,   max   188,6
+    frameDurationCpuMs   P50      7,5,   P90     40,4,   P95     43,9,   P99     48,1
+    frameOverrunMs   P50     -5,7,   P90     48,1,   P95     50,2,   P99     53,6
+    Traces: Iteration 0 1 2 3 4
+
+    BUILD SUCCESSFUL in 1m 23s
+
+----
+
+
+
+DownloadBenchmark_download
+FINewsTrace_MainViewModel.onDownloadClickMs   min 2.316,6,   median 2.529,3,   max 3.598,1
+FINewsTrace_NativeNewsDataSource.getNewsMs   min 2.316,3,   median 2.528,6,   max 3.597,7
+FINewsTrace_NewsRepositoryImpl.getNewsMs   min 2.316,4,   median 2.528,8,   max 3.597,8
+FINewsTrace_RetrofitApiModule.provideGsonMs   min     0,7,   median     0,7,   max     0,7
+FINewsTrace_RetrofitApiModule.provideHttpClientMs   min     3,2,   median     3,3,   max     4,1
+FINewsTrace_RetrofitApiModule.provideLoggingInterceptorMs   min     0,1,   median     0,1,   max     0,1
+FINewsTrace_RetrofitApiModule.provideNewsServiceMs   min     0,1,   median     0,1,   max     0,1
+FINewsTrace_RetrofitApiModule.provideRetrofitMs   min     0,4,   median     0,4,   max     0,5
+FINewsTrace_callApi.callMs   min 2.169,2,   median 2.355,5,   max 3.398,9
+FINewsTrace_callApi.mappingMs   min   146,8,   median   168,8,   max   198,2
+frameDurationCpuMs   P50      8,9,   P90     41,3,   P95     42,3,   P99     44,0
+frameOverrunMs   P50     -3,2,   P90     43,3,   P95     46,7,   P99     49,6
+
+
+Traces: Iteration 0 1 2 3 4 5 6 7 8 9
+
+BUILD SUCCESSFUL in 2m 29s
+
+
+
+
 
 macrobenchmarks geben nur systrace zurück, keinen method trace
 androidx tracing lib kann helfen, aber nur native
 
-profile build type muss profile heißen!
+
+
 
 microbenchmark gibt systrace und callstack sample zurück
 
 ausprobieren von macrobenchmark und microbenchmark
 
 
-iOS:
-learnings bei ios
-signpost api geht mit plugin
-call stack auch im release build zu sehen
+=== iOS
 
-performance profiler würde mehrere signpost aufrufe korrekt filtern und auch averages anzeigen
-xctmetrics sind ein guter anfang, aber sign posts müssten angepasst werden
+Für die Auswertung der Performance der iOS App wird das Programm _Instruments_ in der Version _14.1_ verwendet. 
 
-alamofire plugin genutzt
+Da kein direkter Weg gefunden wurde, die Nicht-Existenz eines UI-Elements zu überprüfen, wurde im Gegensatz zum Test für Android ein Text eingeblendet, sobald der Download fertiggestellt ist. Über den `measure`-Block können während des Tests verschiedene Metriken erfasst werden. In diesem Test werden die Signposts vom Host und die der Dart Engine erfasst.
 
 
+zuerst test mit measure block
 
 
+.UI Test mit measure-Block
+[source,Swift]
+----
+func testDownload() throws {
+        let app = XCUIApplication()
+        measure(metrics: [
+            XCTOSSignpostMetric(subsystem: "test.fi-news-ios", category: "PointsOfInterest", name: "AlamofireClient.callApi"),
+            XCTOSSignpostMetric(subsystem: "test.fi-news-ios", category: "PointsOfInterest", name: "AlamofireClient.mapEntities"),
+            XCTOSSignpostMetric(subsystem: "test.fi-news-ios", category: "PointsOfInterest", name: "flutter"),
+        ]) {
+            app.launch()
+            app.buttons.firstMatch.tap()
+            XCTAssertTrue(app.staticTexts["finished"].waitForExistence(timeout: 60))
+        }
+    }
+----
+
+Nachdem der Test im Profile-Modus gestartet und fehlerfrei ausgeführt wurde besteht die Möglichkeit, Durchschnittswerte der gemessenen Signposts anzuzeigen. Zudem schlägt der Test fehl, wenn die Abweichung zwischen der aktuellen und der vorherigen Messung mehr als 10% beträgt. Alternativ kann ein fester Wert als Basis eingesetzt werden. footnote:[https://developer.apple.com/documentation/xcode/writing-and-running-performance-tests#Set-a-baseline-and-tolerance, abgerufen 2023-03-30]. Um diese Funktion sinnvoll nutzen zu können muss jeder Signpost einen individuellen Namen besitzen. Dies ist über Swift ohne Probleme möglich, mit dem Flutter-Plugin können darüber aber nur Signposts mit dem Namen _flutter_ aufgezeichnet werden footnote:[https://github.com/gaaclarke/signposts/blob/main/src/signposts.c#L16 (Name ist fest definiert), abgerufen 2023-03-30]. Somit ist es ohne Anpassung des Flutter Plugins nicht möglich, mehr als einen Signpost gleichzeitig pro Test zu messen. Das Ergebnis ist in {imgXCodeMeasure} sichtbar. Im _Metric_-Dropdown lassen sich die verschiedenen Signposts auswählen, aber die Ansicht scheint eher für eine grobe Übersicht als einen detaillierten Blick in die Messungen erstellt worden zu sein. Eine ausführlichere Auswertung konnte nicht gefunden werden.
+
+.{imgXCodeMeasure}: Ergebnisfenster für einen UI Test mit measure-Block 
+image::res/xcode-measure-result.png[]
+
+Während Tests mit einem `measure`-Block nicht mit _Instruments_ ausgewertet werden können, ist dies bei normalen UI Tests möglich. Das Instrument _Points of Interest_, mit dem über _Instruments_ die Signposts ausgelesen werden können, bietet eine Funktion an, mit der aus mehreren Signpost-Aufrufen ein Minimum, Maximum und Mittelwert errechnet wird. Im Gegensatz zu den Ergebnissen des `measure`-Blocks geschieht dies auf Ebene von der Signpost-ID und nicht des Namens. Somit kann diese Funktion auch ohne Anpassung des Flutter-Signpost-Moduls benutzt werden. In der Praxis ist es jedoch nicht möglich, mehrere Testdurchläufe mit einer Instruments-Session zu protokollieren. Aus diesem Grund wurde ein neuer Test geschrieben, welcher die App einmal öffnet und dann zehn mal hintereinander den Download startet.
+
+.UI Test mit wiederholten Aufrufen
+[source,Swift]
+----
+func testDownloadRepeatedly() throws {
+    let app = XCUIApplication()
+    app.launch()
+    for _ in 0...9 {
+        app.buttons.firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["finished"].waitForExistence(timeout: 60))
+    }
+}
+----
+
+{tabiOSMeasureRepeatedly} zeigt die Ergebnisse des Tests. Vor allem in der Erstellung der Flutter-Engine ist eine hohe Abweichung zwischen 2ms und 132ms zu erkennen, was ein internes Caching vermuten lässt, da zudem alle Aufrufe nach dem ersten zwischen 2ms und 4ms dauerten. Interessant ist ebenso, dass der API Call über Alamofire trotz des integrierten mappings (für Flutter extra aufgeführt) im Schnitt länger benötigte als die Implementation in Flutter, was durch die geringe Anzahl der Testdurchläufe aber auch mit Netzwerkschwankungen zusammenhängen kann. Bisher unerklärlich ist die Unterschiedliche Zeit des Mappings von Api Model zu Business Model, welches durchschnittlich 6ms bzw. 102ms für das Mapping `FlutterEntry`-> `NewsEntry` bzw. `ApiEntry`-> `NewsEntry` dauerte, obwohl beide Funktionen intern gleich aufgebaut sind. Weiterhin konnte festgestellt werden, dass das verwendete _Instrument_ Messungen automatisch in eine passende Zeiteinheit rundet und so bspw. aus Werten, welche größer als 1000ms sind, gelegentlich eine Umwandlung in Sekunden geschieht. Dies erschwert die Auswertung für das im Testszenario verwendete Einsatzgebiet.
+
+
+.{tabiOSMeasureRepeatedly}: Profiler-Ausgabe, 10 Durchläufe, in Millisekunden
+,===
+,,iOS,,,Flutter,,
+
+,,Min,Median,Max,Min,Median,Max
+Flutter,register,,,,"0,016","0,028","0,09"
+,flutter init,,,,"2,2","15,66","132,47"
+API Service,call,3600,3970,4790,1310,2170,3890
+,response -> JSON,,,,"218,42","239,98","282,68"
+,JSON -> Entity,,,,"24,6","28,51","37,11"
+,mapping,"95,45","101,69","108,27","5,56","5,94","6,82"
+,===
+
+Die Ansicht des Profilers kann ebenso die CPU-Auslastung und die Temperatur des Gerätes in den Kontext der Signposts stellen. Dies kann aber nur visuell geschehen und es bietet sich keine Möglichkeit des sinnvollen Exports der Rohdaten an. {imgInstruments} zeigt eine solche Auswertung am Beispiel des API-Aufrufs mit Hilfe des Flutter-Moduls.
+
+.{imgInstruments}: Instruments-Session eines Downloads über das Flutter Modul 
 image::res/api-call-ios-flutter.png[]
-image::res/api-call-ios-native.png[]
 
-== Ausblick
+
+--- 
+
+Mit dem 
+
+
+
+
+== Diskussion und Ausblick
+
+
+man sieht flutter läuft schneller als 
+
+
+
+generell müssen plugins besser ausgewählt werden, anhand von popularität oder so
+
+
+flutter:
+unterschiede in android und ios müssen abstrahiert werden (signpost)
+generische error klasse noch nicht in pigeon enthalten
+
+
+obwohl nur wenig Zeit für Projektsetup in Android viele Probleme
+
+kein error handling in flutter modul serialisiert
+
+
+
 nicht nur Performance wichtig, sondern auch andere wichtige Metriken 
 
 wie kann softwarequalität sinnvoll und objetiv gemessen werden?
 ISO 9126
 
----
-
-Fragen: 
-
-- Aufbau Projekt (SW Qualität mit rein?)
-- Zeitplan
-- ASCIIDoc:
-* Listings usw richtig verlinken?
-* Quellenangabe in wissenschaftlicher Form
-
-
-matlab, spss,  k means cluster
-
-kapitel schon einleitung abschlussatz
